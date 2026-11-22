@@ -1,0 +1,457 @@
+{
+  "racas": [
+    {
+      "id": "humano",
+      "nome": "Humano",
+      "descricao": "Versáteis, ambiciosos e adaptáveis. Dominam a maior parte dos mares e reinos do mundo.",
+      "bonus_atributos": {
+        "forca": 1,
+        "destreza": 1,
+        "constituicao": 1,
+        "inteligencia": 1,
+        "sabedoria": 1,
+        "carisma": 1
+      },
+      "hp_base": 10,
+      "movimento": 6,
+      "habilidades": [
+        {
+          "id": "determinacao_humana",
+          "nome": "Determinação Inabalável",
+          "tipo": "passiva",
+          "descricao": "Ganha +1 em todos os atributos e +10% de experiência em combate."
+        },
+        {
+          "id": "esforco_extra",
+          "nome": "Esforço Extra",
+          "tipo": "ativa",
+          "custo_energia": 10,
+          "alcance": 0,
+          "dano": "0",
+          "descricao": "Recupera 1d6 + Constituição de HP ou ganha +2 quadrados de movimento neste turno."
+        }
+      ]
+    },
+    {
+      "id": "homem_peixe",
+      "nome": "Homem-Peixe",
+      "descricao": "Nascidos dez vezes mais fortes que humanos na superfície e ainda mais letais na água.",
+      "bonus_atributos": {
+        "forca": 2,
+        "constituicao": 1
+      },
+      "hp_base": 14,
+      "movimento": 6,
+      "habilidades": [
+        {
+          "id": "anfibio_adaptado",
+          "nome": "Anfíbio Adaptado",
+          "tipo": "passiva",
+          "descricao": "Imune a penalidades de movimento na água (se não comer uma Akuma no Mi) e resistência a dano de frio."
+        },
+        {
+          "id": "mordida_predador",
+          "nome": "Mordida de Tubarão",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 1,
+          "dano": "1d8 + forca",
+          "descricao": "Ataque desarmado perfurante brutal com presas afiadas."
+        }
+      ]
+    },
+    {
+      "id": "sereiano",
+      "nome": "Sereiano (Tritão ou Sereia)",
+      "descricao": "Mestres das correntes marinhas, velozes e capazes de manipular o fluxo da água.",
+      "bonus_atributos": {
+        "destreza": 1,
+        "sabedoria": 1,
+        "carisma": 1
+      },
+      "hp_base": 11,
+      "movimento": 5,
+      "habilidades": [
+        {
+          "id": "combate_tritao",
+          "nome": "Combate Tritão",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 4,
+          "dano": "1d6 + carisma",
+          "descricao": "Dispara um jato de água pressurizada que causa dano de água/frio e reduz o movimento do alvo em 1 quadrado."
+        },
+        {
+          "id": "dominio_correntes",
+          "nome": "Domínio das Correntes",
+          "tipo": "passiva",
+          "descricao": "Dobra o deslocamento em terrenos de água rasa e concede resistência a dano de frio."
+        }
+      ]
+    },
+    {
+      "id": "habitante_do_ceu",
+      "nome": "Habitante do Céu (Skypiean / Shandian)",
+      "descricao": "Nativos das ilhas celestiais com pequenas asas nas costas e domínio natural de Dials.",
+      "bonus_atributos": {
+        "destreza": 1,
+        "sabedoria": 2
+      },
+      "hp_base": 10,
+      "movimento": 6,
+      "habilidades": [
+        {
+          "id": "protecao_nuvens",
+          "nome": "Proteção das Nuvens",
+          "tipo": "passiva",
+          "descricao": "Ignora terreno difícil de elevação e é imune a dano de queda ou empurrão contra obstáculos."
+        },
+        {
+          "id": "dial_impacto",
+          "nome": "Impact Dial",
+          "tipo": "ativa",
+          "custo_energia": 20,
+          "alcance": 1,
+          "dano": "2d6 + sabedoria",
+          "descricao": "Libera uma onda de choque armazenada que empurra o inimigo 2 quadrados para trás."
+        }
+      ]
+    },
+    {
+      "id": "mink",
+      "nome": "Mink",
+      "descricao": "Guerreiros bestiais da Tribo Mink, dotados de agilidade selvagem e eletricidade estática natural.",
+      "bonus_atributos": {
+        "forca": 1,
+        "destreza": 1,
+        "sabedoria": 1
+      },
+      "hp_base": 12,
+      "movimento": 6,
+      "habilidades": [
+        {
+          "id": "electro",
+          "nome": "Electro",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 1,
+          "dano": "1d8 + sabedoria",
+          "descricao": "Canaliza eletricidade através das garras ou armas, causando dano elétrico e ignorando armaduras metálicas."
+        },
+        {
+          "id": "instinto_animal",
+          "nome": "Instinto Predatório",
+          "tipo": "passiva",
+          "descricao": "Concede resistência a dano elétrico e +2 em testes de iniciativa e esquiva."
+        }
+      ]
+    },
+    {
+      "id": "ciborgue",
+      "nome": "Ciborgue",
+      "descricao": "Humanos modificados com blindagem de aço, armas ocultas e movidos a combustível (como Cola).",
+      "bonus_atributos": {
+        "constituicao": 2,
+        "forca": 1
+      },
+      "hp_base": 14,
+      "movimento": 6,
+      "habilidades": [
+        {
+          "id": "chassi_aco",
+          "nome": "Chassi de Aço",
+          "tipo": "passiva",
+          "descricao": "Concede +1 permanente na Defesa e resistência contra venenos."
+        },
+        {
+          "id": "rajada_ar",
+          "nome": "Coup de Vent (Rajada de Ar)",
+          "tipo": "ativa",
+          "custo_energia": 20,
+          "alcance": 3,
+          "dano": "1d8 + constituicao",
+          "descricao": "Dispara uma explosão de ar comprimido em cone que empurra inimigos 2 quadrados."
+        }
+      ]
+    },
+    {
+      "id": "tribo_yokai",
+      "nome": "Tribo Yokai (Pernas-Longas / Braços-Longos)",
+      "descricao": "Tribos humanas de proporções extraordinárias que amplificam o alcance físico ou a velocidade.",
+      "bonus_atributos": {
+        "forca": 1,
+        "destreza": 1,
+        "carisma": 1
+      },
+      "hp_base": 11,
+      "movimento": 7,
+      "habilidades": [
+        {
+          "id": "membros_alongados",
+          "nome": "Alcance Extraordinário",
+          "tipo": "passiva",
+          "descricao": "Aumenta o alcance de ataques corpo a corpo em +1 quadrado e o movimento base em +1 quadrado."
+        },
+        {
+          "id": "golpe_giratorio",
+          "nome": "Varredura de Membros Longos",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 2,
+          "dano": "1d8 + destreza",
+          "descricao": "Atinge todos os inimigos adjacentes em um arco amplo."
+        }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "id": "brigao",
+      "nome": "Brigão",
+      "descricao": "Lutadores implacáveis que usam força bruta, punhos e armas improvisadas movidos pela Fúria.",
+      "atributos_principais": ["forca", "constituicao"],
+      "bonus_atributos": {
+        "forca": 2,
+        "constituicao": 1
+      },
+      "hp_base": 14,
+      "habilidades": [
+        {
+          "id": "golpes_metralhadora",
+          "nome": "Golpes Metralhadora",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 1,
+          "dano": "2d6 + forca",
+          "descricao": "Desfere uma sequência frenética de socos em um único alvo adjacente."
+        },
+        {
+          "id": "forca_bruta",
+          "nome": "Força Bruta",
+          "tipo": "ativa",
+          "custo_energia": 10,
+          "alcance": 1,
+          "dano": "1d6 + forca",
+          "descricao": "Um empurrão devastador que arremessa o inimigo 2 quadrados para trás."
+        }
+      ]
+    },
+    {
+      "id": "artista_marcial",
+      "nome": "Artista Marcial",
+      "descricao": "Mestres de estilos como Rokushiki (Seis Poderes) e Karatê Homem-Peixe, canalizando energia espiritual.",
+      "atributos_principais": ["destreza", "sabedoria"],
+      "bonus_atributos": {
+        "destreza": 2,
+        "sabedoria": 1
+      },
+      "hp_base": 10,
+      "habilidades": [
+        {
+          "id": "chute_tempestade",
+          "nome": "Rankyaku (Chute Tempestade)",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 5,
+          "dano": "1d8 + destreza",
+          "descricao": "Dispara uma lâmina de ar comprimido em linha reta contra um alvo distante."
+        },
+        {
+          "id": "dedo_pistola",
+          "nome": "Shigan (Dedo Pistola)",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 1,
+          "dano": "1d10 + destreza",
+          "descricao": "Perfura a defesa do inimigo com um golpe veloz de dedo que ignora parte da armadura."
+        }
+      ]
+    },
+    {
+      "id": "guerreiro",
+      "nome": "Guerreiro (Espadachim)",
+      "descricao": "Combatentes disciplinados especialistas em espadas, lâminas amaldiçoadas e técnicas de corte.",
+      "atributos_principais": ["forca", "destreza"],
+      "bonus_atributos": {
+        "forca": 1,
+        "destreza": 2
+      },
+      "hp_base": 12,
+      "habilidades": [
+        {
+          "id": "corte_demoniaco",
+          "nome": "Corte Demoníaco (Oni Giri)",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 1,
+          "dano": "1d10 + forca",
+          "descricao": "Avança cortando o alvo com precisão letal e alta chance de acerto crítico."
+        },
+        {
+          "id": "retomar_folego",
+          "nome": "Segundo Fôlego",
+          "tipo": "ativa",
+          "custo_energia": 10,
+          "alcance": 0,
+          "dano": "0",
+          "descricao": "Recupera imediatamente 1d10 + nível de HP em meio à batalha."
+        }
+      ]
+    },
+    {
+      "id": "atirador",
+      "nome": "Atirador",
+      "descricao": "Especialistas em pistolas, rifles e estilingues que marcam pontos fracos a longa distância.",
+      "atributos_principais": ["destreza", "sabedoria"],
+      "bonus_atributos": {
+        "destreza": 2,
+        "sabedoria": 1
+      },
+      "hp_base": 11,
+      "habilidades": [
+        {
+          "id": "mira_travada",
+          "nome": "Mira Travada",
+          "tipo": "ativa",
+          "custo_energia": 10,
+          "alcance": 7,
+          "dano": "1d8 + destreza",
+          "descricao": "Disparo preciso que ignora cobertura parcial e marca o alvo para receber dano extra."
+        },
+        {
+          "id": "tiro_incapacitante",
+          "nome": "Tiro Incapacitante",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 6,
+          "dano": "1d6 + destreza",
+          "descricao": "Atinge os membros inferiores do alvo, reduzindo seu deslocamento a 0 no próximo turno."
+        }
+      ]
+    },
+    {
+      "id": "ladino",
+      "nome": "Ladino",
+      "descricao": "Piratas astutos que exploram brechas na guarda inimiga e se movem pelas sombras.",
+      "atributos_principais": ["destreza", "inteligencia"],
+      "bonus_atributos": {
+        "destreza": 2,
+        "carisma": 1
+      },
+      "hp_base": 10,
+      "habilidades": [
+        {
+          "id": "golpe_traicoeiro",
+          "nome": "Golpe Traiçoeiro",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 1,
+          "dano": "2d6 + destreza",
+          "descricao": "Causa dano massivo se o alvo estiver flanqueado por um aliado ou distraído."
+        },
+        {
+          "id": "acao_ardilosa",
+          "nome": "Ação Ardilosa",
+          "tipo": "ativa",
+          "custo_energia": 10,
+          "alcance": 0,
+          "dano": "0",
+          "descricao": "Permite recuar sem sofrer ataques de oportunidade e ganha +2 quadrados de movimento."
+        }
+      ]
+    },
+    {
+      "id": "quimico",
+      "nome": "Químico",
+      "descricao": "Cientistas e médicos de campo capazes de criar toxinas, bálsamos de cura e mutações genéticas.",
+      "atributos_principais": ["sabedoria", "inteligencia"],
+      "bonus_atributos": {
+        "sabedoria": 2,
+        "constituicao": 1
+      },
+      "hp_base": 10,
+      "habilidades": [
+        {
+          "id": "balsamo_curativo",
+          "nome": "Bálsamo Curativo",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 4,
+          "dano": "0",
+          "descricao": "Dispara uma cápsula medicinal que cura 2d6 + Sabedoria de HP em um aliado."
+        },
+        {
+          "id": "mutacao_quimica",
+          "nome": "Mutação Química",
+          "tipo": "ativa",
+          "custo_energia": 20,
+          "alcance": 0,
+          "dano": "0",
+          "descricao": "Altera o fator de linhagem por 3 turnos, concedendo +10 de HP temporário e +2 de dano físico."
+        }
+      ]
+    },
+    {
+      "id": "inventor",
+      "nome": "Inventor",
+      "descricao": "Gênios da engenharia e meteorologia que utilizam dispositivos tecnológicos em combate.",
+      "atributos_principais": ["inteligencia", "sabedoria"],
+      "bonus_atributos": {
+        "inteligencia": 2,
+        "destreza": 1
+      },
+      "hp_base": 9,
+      "habilidades": [
+        {
+          "id": "nuvem_trovao",
+          "nome": "Tempo de Trovão",
+          "tipo": "ativa",
+          "custo_energia": 20,
+          "alcance": 5,
+          "dano": "2d6 + inteligencia",
+          "descricao": "Invoca uma nuvem carregada que atinge o alvo e inimigos adjacentes com raios."
+        },
+        {
+          "id": "escudo_defletor",
+          "nome": "Escudo Defletor",
+          "tipo": "ativa",
+          "custo_energia": 10,
+          "alcance": 0,
+          "dano": "0",
+          "descricao": "Ativa um campo eletromagnético que aumenta a Defesa em +3 até o próximo turno."
+        }
+      ]
+    },
+    {
+      "id": "escaldo",
+      "nome": "Escaldo (Músico)",
+      "descricao": "Músicos dos mares cujas melodias inspiram a tripulação ou hipnotizam os adversários.",
+      "atributos_principais": ["carisma", "destreza"],
+      "bonus_atributos": {
+        "carisma": 2,
+        "destreza": 1
+      },
+      "hp_base": 10,
+      "habilidades": [
+        {
+          "id": "cantico_guerra",
+          "nome": "Cântico de Guerra Pirata",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 4,
+          "dano": "0",
+          "descricao": "Inspira um aliado em até 4 quadrados, concedendo +2 em ataques e dano no próximo turno."
+        },
+        {
+          "id": "acorde_hipnotico",
+          "nome": "Acorde Hipnótico",
+          "tipo": "ativa",
+          "custo_energia": 15,
+          "alcance": 3,
+          "dano": "1d6 + carisma",
+          "descricao": "Onda sonora psíquica que atordoa o inimigo se falhar em um teste de Sabedoria."
+        }
+      ]
+    }
+  ]
+}
