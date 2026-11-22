@@ -1,0 +1,75 @@
+{
+  "mares": {
+    "east_blue": {
+      "id": "east_blue",
+      "nome": "East Blue",
+      "descricao": "Considerado o mar mais calmo dos quatro, berço de grandes lendas.",
+      "ilha_inicial": "foosha_village",
+      "porto_saida": { "x": 35, "y": 5 }
+    },
+    "north_blue": {
+      "id": "north_blue",
+      "nome": "North Blue",
+      "descricao": "Mar gelado e palco de grandes reinos e guerras históricas.",
+      "ilha_inicial": "lvneel_kingdom",
+      "porto_saida": { "x": 11, "y": 5 }
+    },
+    "west_blue": {
+      "id": "west_blue",
+      "nome": "West Blue",
+      "descricao": "Dominado por famílias da máfia do submundo e ilhas eruditas.",
+      "ilha_inicial": "ohara",
+      "porto_saida": { "x": 11, "y": 20 }
+    },
+    "south_blue": {
+      "id": "south_blue",
+      "nome": "South Blue",
+      "descricao": "Lar de grandes estaleiros, reinos militares e escolas de artes marciais.",
+      "ilha_inicial": "sorbet_kingdom",
+      "porto_saida": { "x": 35, "y": 20 }
+    }
+  },
+  "ilhas": [
+    { "id": "foosha_village", "nome": "Vila Foosha (Ilha Dawn)", "mar": "east_blue", "bioma": "tropical", "x": 37, "y": 4, "nivel_recomendado": 1 },
+    { "id": "shells_town", "nome": "Shells Town", "mar": "east_blue", "bioma": "tropical", "x": 35, "y": 3, "nivel_recomendado": 1 },
+    { "id": "orange_town", "nome": "Orange Town", "mar": "east_blue", "bioma": "tropical", "x": 33, "y": 5, "nivel_recomendado": 1 },
+    { "id": "syrup_village", "nome": "Vila Syrup (Ilhas Gecko)", "mar": "east_blue", "bioma": "tropical", "x": 30, "y": 5, "nivel_recomendado": 1 },
+    { "id": "baratie", "nome": "Restaurante Baratie", "mar": "east_blue", "bioma": "tropical", "x": 31, "y": 7, "nivel_recomendado": 2 },
+    { "id": "arlong_park", "nome": "Arlong Park (Ilhas Conomi)", "mar": "east_blue", "bioma": "tropical", "x": 27, "y": 5, "nivel_recomendado": 2 },
+    { "id": "loguetown", "nome": "Loguetown (Ilhas Polestar)", "mar": "east_blue", "bioma": "tropical", "x": 24, "y": 7, "nivel_recomendado": 2 },
+
+    { "id": "lvneel_kingdom", "nome": "Reino de Lvneel", "mar": "north_blue", "bioma": "tropical", "x": 13, "y": 5, "nivel_recomendado": 1 },
+    { "id": "flevance", "nome": "Flevance (Cidade Branca)", "mar": "north_blue", "bioma": "inverno", "x": 6, "y": 5, "nivel_recomendado": 1 },
+    { "id": "minion_island", "nome": "Ilha Minion", "mar": "north_blue", "bioma": "inverno", "x": 8, "y": 4, "nivel_recomendado": 2 },
+    { "id": "whiteland", "nome": "Reino de Whiteland", "mar": "north_blue", "bioma": "inverno", "x": 11, "y": 2, "nivel_recomendado": 2 },
+    { "id": "spider_miles", "nome": "Spider Miles", "mar": "north_blue", "bioma": "sombrio", "x": 7, "y": 3, "nivel_recomendado": 2 },
+
+    { "id": "ohara", "nome": "Ilha de Ohara", "mar": "west_blue", "bioma": "tropical", "x": 12, "y": 20, "nivel_recomendado": 1 },
+    { "id": "ilisia_kingdom", "nome": "Reino de Ilisia", "mar": "west_blue", "bioma": "tropical", "x": 6, "y": 19, "nivel_recomendado": 1 },
+    { "id": "kano_country", "nome": "País de Kano", "mar": "west_blue", "bioma": "outonal", "x": 15, "y": 23, "nivel_recomendado": 2 },
+    { "id": "god_valley", "nome": "Ruínas de God Valley", "mar": "west_blue", "bioma": "vulcanico", "x": 14, "y": 17, "nivel_recomendado": 3 },
+
+    { "id": "sorbet_kingdom", "nome": "Reino de Sorbet", "mar": "south_blue", "bioma": "tropical", "x": 34, "y": 20, "nivel_recomendado": 1 },
+    { "id": "briss_kingdom", "nome": "Reino de Briss", "mar": "south_blue", "bioma": "tropical", "x": 25, "y": 20, "nivel_recomendado": 1 },
+    { "id": "torino_kingdom", "nome": "Reino de Torino", "mar": "south_blue", "bioma": "tropical", "x": 31, "y": 17, "nivel_recomendado": 2 },
+    { "id": "karate_island", "nome": "Ilha do Karatê", "mar": "south_blue", "bioma": "vulcanico", "x": 36, "y": 18, "nivel_recomendado": 2 },
+
+    { "id": "twin_cape", "nome": "Cabos Gêmeos (Entrada da Grand Line)", "mar": "paradise", "bioma": "tropical", "x": 23, "y": 12, "nivel_recomendado": 2 },
+    { "id": "little_garden", "nome": "Little Garden", "mar": "paradise", "bioma": "tropical", "x": 25, "y": 12, "nivel_recomendado": 3 },
+    { "id": "drum_island", "nome": "Ilha Drum", "mar": "paradise", "bioma": "inverno", "x": 27, "y": 12, "nivel_recomendado": 3 },
+    { "id": "alabasta", "nome": "Alabasta (Sandy Island)", "mar": "paradise", "bioma": "deserto", "x": 29, "y": 12, "nivel_recomendado": 4 },
+    { "id": "jaya_skypiea", "nome": "Jaya & Skypiea", "mar": "paradise", "bioma": "ceu", "x": 31, "y": 12, "nivel_recomendado": 4 },
+    { "id": "water_seven", "nome": "Water Seven & Enies Lobby", "mar": "paradise", "bioma": "tropical", "x": 34, "y": 12, "nivel_recomendado": 5 },
+    { "id": "thriller_bark", "nome": "Thriller Bark (Florian Triangle)", "mar": "paradise", "bioma": "sombrio", "x": 36, "y": 12, "nivel_recomendado": 6 },
+    { "id": "sabaody", "nome": "Arquipélago Sabaody & Marineford", "mar": "paradise", "bioma": "tropical", "x": 38, "y": 12, "nivel_recomendado": 7 },
+
+    { "id": "fishman_island", "nome": "Ilha dos Homens-Peixe", "mar": "novo_mundo", "bioma": "tropical", "x": 2, "y": 12, "nivel_recomendado": 8 },
+    { "id": "punk_hazard", "nome": "Punk Hazard", "mar": "novo_mundo", "bioma": "vulcanico", "x": 4, "y": 12, "nivel_recomendado": 8 },
+    { "id": "dressrosa", "nome": "Reino de Dressrosa", "mar": "novo_mundo", "bioma": "tropical", "x": 6, "y": 12, "nivel_recomendado": 9 },
+    { "id": "whole_cake", "nome": "Whole Cake Island (Totto Land)", "mar": "novo_mundo", "bioma": "outonal", "x": 9, "y": 12, "nivel_recomendado": 10 },
+    { "id": "zou", "nome": "Zou (Ilha Elefante)", "mar": "novo_mundo", "bioma": "tropical", "x": 11, "y": 13, "nivel_recomendado": 10 },
+    { "id": "wano_kingdom", "nome": "País de Wano", "mar": "novo_mundo", "bioma": "outonal", "x": 14, "y": 12, "nivel_recomendado": 11 },
+    { "id": "egghead", "nome": "Ilha Egghead & Elbaf", "mar": "novo_mundo", "bioma": "vulcanico", "x": 16, "y": 12, "nivel_recomendado": 12 },
+    { "id": "laugh_tale", "nome": "Loadstar & Laugh Tale", "mar": "novo_mundo", "bioma": "sombrio", "x": 18, "y": 12, "nivel_recomendado": 15 }
+  ]
+}
