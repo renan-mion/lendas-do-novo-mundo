@@ -1,9 +1,9 @@
 import { RenderizadorCanvas } from './motor/renderizador_canvas.js';
-import { GeradorMapas, INFO_TILES, TIPOS_TILE } from './motor/gerador_mapas.js';
+import { GeradorMapas, INFO_TILES, TIPOS_TILE, PALETAS_BIOMA } from './motor/gerador_mapas.js';
 import { MotorNarrativo } from './motor/motor_narrativo.js';
 import { MotorCombate } from './motor/motor_combate.js';
 
-const CHAVE_SAVE = 'lendas_novo_mundo_save_v1';
+const CHAVE_SAVE = 'lendas_novo_mundo_save_v2';
 
 const NOMES_ATRIBUTOS = {
   forca: 'Força',
@@ -17,14 +17,15 @@ const NOMES_ATRIBUTOS = {
 export const estadoJogo = {
   dadosRacasClasses: null,
   dadosPoderes: null,
+  dadosMundo: null,
   configSprites: null,
   jogador: null,
-  faseAtual: 'criacao', // 'criacao' | 'ilha' | 'oceano' | 'combate'
+  faseAtual: 'criacao',
   faseAnterior: 'ilha',
   mapaAtual: null,
   mapaOceano: null,
-  posicaoJogador: { x: 7, y: 7 },
-  posicaoNavio: { x: 7, y: 7 }
+  posicaoJogador: { x: 14, y: 14 },
+  posicaoNavio: { x: 37, y: 4 }
 };
 
 class GerenciadorCriacao {
@@ -54,14 +55,16 @@ class GerenciadorCriacao {
 
   async iniciar() {
     try {
-      const [dadosRacas, dadosPoderes, configSprites] = await Promise.all([
+      const [dadosRacas, dadosPoderes, dadosMundo, configSprites] = await Promise.all([
         this.carregarJson('./dados/racas_classes.json'),
         this.carregarJson('./dados/poderes.json'),
+        this.carregarJson('./dados/mundo_one_piece.json'),
         this.carregarJson('./recursos/config_sprites.json')
       ]);
 
       estadoJogo.dadosRacasClasses = dadosRacas;
       estadoJogo.dadosPoderes = dadosPoderes;
+      estadoJogo.dadosMundo = dadosMundo;
       estadoJogo.configSprites = configSprites;
 
       const canvas = document.getElementById('canvas-preview');
@@ -91,10 +94,18 @@ class GerenciadorCriacao {
   }
 
   popularSeletores() {
+    const selMar = document.getElementById('select-mar-origem');
     const selRaca = document.getElementById('select-raca');
     const selClasse = document.getElementById('select-classe');
     const selHaki = document.getElementById('select-haki');
     const selAkuma = document.getElementById('select-akuma');
+
+    Object.values(estadoJogo.dadosMundo.mares).forEach(mar => {
+      const opt = document.createElement('option');
+      opt.value = mar.id;
+      opt.textContent = mar.nome;
+      selMar.appendChild(opt);
+    });
 
     estadoJogo.dadosRacasClasses.racas.forEach(raca => {
       const opt = document.createElement('option');
@@ -175,7 +186,7 @@ class GerenciadorCriacao {
     });
 
     const idsMonitorados = [
-      'select-faccao', 'select-raca', 'select-classe',
+      'select-faccao', 'select-mar-origem', 'select-raca', 'select-classe',
       'select-haki', 'select-akuma', 'cor-pele',
       'cor-cabelo', 'cor-roupa', 'cor-calca', 'select-acessorio'
     ];
@@ -205,6 +216,11 @@ class GerenciadorCriacao {
     document.getElementById('btn-continuar-save').addEventListener('click', () => {
       this.onCarregarSave();
     });
+  }
+
+  obterMarSelecionado() {
+    const id = document.getElementById('select-mar-origem').value;
+    return estadoJogo.dadosMundo.mares[id];
   }
 
   obterRacaSelecionada() {
@@ -241,11 +257,16 @@ class GerenciadorCriacao {
   }
 
   atualizarTudo() {
+    const mar = this.obterMarSelecionado();
     const raca = this.obterRacaSelecionada();
     const classe = this.obterClasseSelecionada();
     const haki = this.obterHakiSelecionado();
     const akuma = this.obterAkumaSelecionada();
     const attrs = this.calcularAtributosFinais();
+
+    const ilhaInicial = estadoJogo.dadosMundo.ilhas.find(i => i.id === mar.ilha_inicial);
+    document.getElementById('desc-mar').textContent =
+      `${mar.descricao} Ilha Inicial: ${ilhaInicial ? ilhaInicial.nome : ''}.`;
 
     document.getElementById('desc-raca').textContent = raca.descricao;
     document.getElementById('desc-classe').textContent = classe.descricao;
@@ -312,6 +333,7 @@ class GerenciadorCriacao {
   finalizarCriacao() {
     const nome = document.getElementById('input-nome').value.trim() || 'Aventureiro';
     const faccao = document.getElementById('select-faccao').value;
+    const mar = this.obterMarSelecionado();
     const raca = this.obterRacaSelecionada();
     const classe = this.obterClasseSelecionada();
     const haki = this.obterHakiSelecionado();
@@ -325,6 +347,7 @@ class GerenciadorCriacao {
     estadoJogo.jogador = {
       nome,
       faccao,
+      marOrigem: mar.id,
       nivel: 1,
       xp: 0,
       berries: 5000,
@@ -357,7 +380,7 @@ class GerenciadorCriacao {
 
 class ControladorMundo {
   constructor() {
-    this.geradorMapas = new GeradorMapas(15, 15);
+    this.geradorMapas = new GeradorMapas();
     this.renderizador = null;
     this.motorNarrativo = null;
     this.motorCombate = null;
@@ -392,8 +415,14 @@ class ControladorMundo {
       zarparOceano: () => {
         this.entrarModoOceano();
       },
-      atracarIlha: (nomeIlha) => {
-        this.entrarModoIlha(nomeIlha);
+      atracarIlha: (ilhaConfig) => {
+        this.entrarModoIlha(ilhaConfig);
+      },
+      atravessarReverseMountain: () => {
+        // Teleporta o navio para os Cabos Gêmeos (entrada de Paradise na Grand Line)
+        estadoJogo.posicaoNavio = { x: 23, y: 12 };
+        document.getElementById('coordenadas-jogador').textContent = `Navio: (23, 12) • Grand Line`;
+        this.renderizar();
       },
       limparTileOceano: (x, y) => {
         if (estadoJogo.mapaOceano) {
@@ -411,7 +440,15 @@ class ControladorMundo {
 
   iniciarAventura() {
     this.prepararInterfaceJogo();
-    this.entrarModoIlha(null);
+    const mar = estadoJogo.dadosMundo.mares[estadoJogo.jogador.marOrigem];
+    const ilhaInicial = estadoJogo.dadosMundo.ilhas.find(i => i.id === mar.ilha_inicial);
+
+    estadoJogo.mapaOceano = this.geradorMapas.gerarMapaMundi(estadoJogo.dadosMundo);
+    estadoJogo.posicaoNavio = ilhaInicial
+      ? { x: ilhaInicial.x, y: ilhaInicial.y }
+      : { ...mar.porto_saida };
+
+    this.entrarModoIlha(ilhaInicial);
     this.salvarProgresso(true);
   }
 
@@ -448,14 +485,14 @@ class ControladorMundo {
     estadoJogo.faseAtual = dados.faseAtual || 'ilha';
     estadoJogo.mapaAtual = dados.mapaAtual;
     estadoJogo.mapaOceano = dados.mapaOceano;
-    estadoJogo.posicaoJogador = dados.posicaoJogador || { x: 7, y: 7 };
-    estadoJogo.posicaoNavio = dados.posicaoNavio || { x: 7, y: 7 };
+    estadoJogo.posicaoJogador = dados.posicaoJogador || { x: 14, y: 14 };
+    estadoJogo.posicaoNavio = dados.posicaoNavio || { x: 37, y: 4 };
 
     this.prepararInterfaceJogo();
 
     if (estadoJogo.faseAtual === 'oceano' && estadoJogo.mapaOceano) {
       document.getElementById('barra-status-topo').innerHTML =
-        `<span>Fase Atual: Navegação Marítima (East Blue)</span>`;
+        `<span>Fase Atual: Mapa-Múndi Oceânico</span>`;
       document.getElementById('titulo-local').textContent = estadoJogo.mapaOceano.nome;
       document.getElementById('coordenadas-jogador').textContent =
         `Navio: (${estadoJogo.posicaoNavio.x}, ${estadoJogo.posicaoNavio.y})`;
@@ -463,10 +500,13 @@ class ControladorMundo {
     } else {
       estadoJogo.faseAtual = 'ilha';
       if (!estadoJogo.mapaAtual) {
-        estadoJogo.mapaAtual = this.geradorMapas.gerarIlhaOrigem(estadoJogo.jogador.faccao);
+        const mar = estadoJogo.dadosMundo.mares[estadoJogo.jogador.marOrigem || 'east_blue'];
+        const ilhaInicial = estadoJogo.dadosMundo.ilhas.find(i => i.id === mar.ilha_inicial);
+        estadoJogo.mapaAtual = this.geradorMapas.gerarIlha(ilhaInicial);
       }
+      const nomeBioma = PALETAS_BIOMA[estadoJogo.mapaAtual.bioma]?.nome || 'Tropical';
       document.getElementById('barra-status-topo').innerHTML =
-        `<span>Fase Atual: Exploração Terrestre (${estadoJogo.mapaAtual.nome})</span>`;
+        `<span>Exploração: ${estadoJogo.mapaAtual.nome} (${nomeBioma})</span>`;
       document.getElementById('titulo-local').textContent = estadoJogo.mapaAtual.nome;
       document.getElementById('coordenadas-jogador').textContent =
         `Pos: (${estadoJogo.posicaoJogador.x}, ${estadoJogo.posicaoJogador.y})`;
@@ -480,10 +520,8 @@ class ControladorMundo {
 
   verificarSubidaNivel() {
     const j = estadoJogo.jogador;
-    const xpNecessario = j.nivel * 100;
-
-    while (j.xp >= xpNecessario) {
-      j.xp -= xpNecessario;
+    while (j.xp >= j.nivel * 100) {
+      j.xp -= j.nivel * 100;
       j.nivel += 1;
       j.hpMax += 4;
       j.hpAtual = j.hpMax;
@@ -509,6 +547,7 @@ class ControladorMundo {
     alert(
       `=== FICHA DE COMBATENTE ===\n` +
       `Nome: ${j.nome} (${j.faccao.toUpperCase()}) - Nível ${j.nivel} (${j.xp}/${j.nivel * 100} XP)\n` +
+      `Mar de Origem: ${estadoJogo.dadosMundo.mares[j.marOrigem]?.nome || 'East Blue'}\n` +
       `Raça: ${j.raca.nome} | Classe: ${j.classe.nome}\n` +
       `HP: ${j.hpAtual}/${j.hpMax} | Energia: ${j.energiaAtual}/${j.energiaMax} | Defesa: ${j.defesa}\n` +
       `Akuma no Mi: ${j.akumaNoMi ? j.akumaNoMi.nome : 'Nenhuma'}\n` +
@@ -620,24 +659,31 @@ class ControladorMundo {
       if (estadoJogo.faseAnterior === 'oceano') {
         this.entrarModoOceano();
       } else {
-        this.entrarModoIlha(estadoJogo.mapaAtual?.nome);
+        this.entrarModoIlha({
+          id: estadoJogo.mapaAtual?.id,
+          nome: estadoJogo.mapaAtual?.nome,
+          mar: estadoJogo.mapaAtual?.mar,
+          bioma: estadoJogo.mapaAtual?.bioma,
+          nivel_recomendado: estadoJogo.mapaAtual?.nivelRecomendado
+        });
       }
       this.salvarProgresso(true);
     } else {
-      alert('Você foi derrotado em batalha! A tripulação recuou para se recuperar na Ilha de Origem.');
+      alert('Você foi derrotado em batalha! A tripulação recuou para se recuperar.');
       estadoJogo.jogador.hpAtual = estadoJogo.jogador.hpMax;
       estadoJogo.jogador.energiaAtual = estadoJogo.jogador.energiaMax;
       this.entrarModoIlha(null);
     }
   }
 
-  entrarModoIlha(nomeIlhaCustom) {
+  entrarModoIlha(ilhaConfig) {
     estadoJogo.faseAtual = 'ilha';
-    estadoJogo.mapaAtual = this.geradorMapas.gerarIlhaOrigem(estadoJogo.jogador.faccao, nomeIlhaCustom);
+    estadoJogo.mapaAtual = this.geradorMapas.gerarIlha(ilhaConfig);
     estadoJogo.posicaoJogador = { ...estadoJogo.mapaAtual.posicaoInicial };
 
+    const nomeBioma = PALETAS_BIOMA[estadoJogo.mapaAtual.bioma]?.nome || 'Tropical';
     document.getElementById('barra-status-topo').innerHTML =
-      `<span>Fase Atual: Exploração Terrestre (${estadoJogo.mapaAtual.nome})</span>`;
+      `<span>Exploração: ${estadoJogo.mapaAtual.nome} • ${nomeBioma}</span>`;
     document.getElementById('titulo-local').textContent = estadoJogo.mapaAtual.nome;
     document.getElementById('coordenadas-jogador').textContent =
       `Pos: (${estadoJogo.posicaoJogador.x}, ${estadoJogo.posicaoJogador.y})`;
@@ -645,19 +691,32 @@ class ControladorMundo {
     this.atualizarLegenda('ilha');
     this.atualizarHud();
     this.renderizar();
-    this.registrarLog(`Você desembarcou em ${estadoJogo.mapaAtual.nome}.`);
+    this.registrarLog(`Você desembarcou em ${estadoJogo.mapaAtual.nome} (${nomeBioma}).`);
+  }
+
+  identificarRegiaoOceano(x, y) {
+    if (y >= 11 && y <= 13) {
+      return x >= 22 ? 'Grand Line (Paraíso)' : 'Grand Line (Novo Mundo)';
+    }
+    if (y < 10) {
+      return x < 20 ? 'North Blue' : 'East Blue';
+    }
+    if (y > 14) {
+      return x < 20 ? 'West Blue' : 'South Blue';
+    }
+    return 'Calm Belt';
   }
 
   entrarModoOceano() {
     estadoJogo.faseAtual = 'oceano';
     if (!estadoJogo.mapaOceano) {
-      estadoJogo.mapaOceano = this.geradorMapas.gerarOverworldOceano();
-      estadoJogo.posicaoNavio = { ...estadoJogo.mapaOceano.posicaoInicial };
+      estadoJogo.mapaOceano = this.geradorMapas.gerarMapaMundi(estadoJogo.dadosMundo);
     }
 
+    const regiao = this.identificarRegiaoOceano(estadoJogo.posicaoNavio.x, estadoJogo.posicaoNavio.y);
     document.getElementById('barra-status-topo').innerHTML =
-      `<span>Fase Atual: Navegação Marítima (East Blue)</span>`;
-    document.getElementById('titulo-local').textContent = estadoJogo.mapaOceano.nome;
+      `<span>Navegação Marítima • ${regiao}</span>`;
+    document.getElementById('titulo-local').textContent = `Oceano — ${regiao}`;
     document.getElementById('coordenadas-jogador').textContent =
       `Navio: (${estadoJogo.posicaoNavio.x}, ${estadoJogo.posicaoNavio.y})`;
 
@@ -665,27 +724,27 @@ class ControladorMundo {
     this.atualizarHud();
     this.renderizar();
 
-    document.getElementById('narrativa-titulo').textContent = '🧭 Navegando pelo East Blue';
+    document.getElementById('narrativa-titulo').textContent = `🧭 Navegando por ${regiao}`;
     document.getElementById('narrativa-texto').textContent =
-      'Velas içadas! Cada milha náutica consome 2% de suprimentos. Explore ilhas, resgate destroços ou enfrente navios inimigos.';
+      'Explore as ilhas oficiais do mapa! Para entrar na Grand Line, navegue até o centro do mapa-múndi na Reverse Mountain (x: 20-21, y: 12).';
     document.getElementById('narrativa-opcoes').innerHTML = '';
-    this.registrarLog('Você zarpou para o mar aberto! Atenção ao nível de suprimentos.');
+    this.registrarLog(`Você zarpou para ${regiao}!`);
   }
 
   atualizarLegenda(modo) {
     const legenda = document.querySelector('.legenda-mapa');
     if (modo === 'ilha') {
       legenda.innerHTML = `
-        <span><i style="background:#f59e0b"></i> Taverna</span>
-        <span><i style="background:#dc2626"></i> Dojo</span>
-        <span><i style="background:#3b82f6"></i> Marinha</span>
-        <span><i style="background:#38bdf8"></i> Porto</span>
+        <span><i style="background:#f59e0b"></i> Taverna (Oeste)</span>
+        <span><i style="background:#dc2626"></i> Dojo (Leste)</span>
+        <span><i style="background:#3b82f6"></i> Marinha (Norte)</span>
+        <span><i style="background:#38bdf8"></i> Porto (Sul)</span>
       `;
     } else if (modo === 'oceano') {
       legenda.innerHTML = `
         <span><i style="background:#16a34a"></i> Ilha</span>
-        <span><i style="background:#d97706"></i> Destroços</span>
-        <span><i style="background:#e0f2fe"></i> Correnteza</span>
+        <span><i style="background:#991b1b"></i> Red Line</span>
+        <span><i style="background:#facc15"></i> Reverse Mt.</span>
         <span><i style="background:#ef4444"></i> Navio Hostil</span>
       `;
     } else {
@@ -769,12 +828,20 @@ class ControladorMundo {
 
       if (novoX < 0 || novoX >= mapa.largura || novoY < 0 || novoY >= mapa.altura) return;
 
+      const tipoTile = mapa.matriz[novoY][novoX];
+      if (!INFO_TILES[tipoTile].navegavel) {
+        this.registrarLog(`Rota bloqueada pela ${INFO_TILES[tipoTile].nome}!`);
+        return;
+      }
+
       estadoJogo.posicaoNavio = { x: novoX, y: novoY };
+      const regiao = this.identificarRegiaoOceano(novoX, novoY);
+      document.getElementById('titulo-local').textContent = `Oceano — ${regiao}`;
       document.getElementById('coordenadas-jogador').textContent = `Navio: (${novoX}, ${novoY})`;
 
       const jogador = estadoJogo.jogador;
       if (jogador.suprimentos > 0) {
-        jogador.suprimentos = Math.max(0, jogador.suprimentos - 2);
+        jogador.suprimentos = Math.max(0, jogador.suprimentos - 1);
       } else {
         jogador.hpAtual = Math.max(1, jogador.hpAtual - 2);
         this.registrarLog('⚠️ Sem suprimentos! A tripulação está sofrendo de fome (-2 HP).');
@@ -783,9 +850,8 @@ class ControladorMundo {
       this.atualizarHud();
       this.renderizar();
 
-      const tipoTile = mapa.matriz[novoY][novoX];
       const eventoMar = this.motorNarrativo.gerarEventoMaritimo(tipoTile, novoX, novoY);
-      this.exibirEvento(eventoMar, 'Mar Aberto');
+      this.exibirEvento(eventoMar, `${regiao} — Mar Aberto`);
     }
   }
 
@@ -798,8 +864,8 @@ class ControladorMundo {
     if (!evento) {
       tituloEl.textContent = tituloPadrao;
       textoEl.textContent = estadoJogo.faseAtual === 'ilha'
-        ? 'Você caminha pela ilha observando o horizonte. Aproxime-se da Taverna, Dojo, Base da Marinha ou Porto.'
-        : 'Ventos calmos sopram nas velas. Continue explorando o oceano em busca de ilhas ou tesouros.';
+        ? 'Ilha ampla (28x28): Taverna a Oeste, Dojo a Leste, Marinha ao Norte e Porto ao Sul.'
+        : 'Navegue até uma das ilhas nomeadas no mapa ou rume ao centro (Reverse Mountain) para entrar na Grand Line.';
       return;
     }
 
