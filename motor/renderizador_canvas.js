@@ -1,4 +1,4 @@
-import { TIPOS_TILE, INFO_TILES } from './gerador_mapas.js';
+import { TIPOS_TILE, INFO_TILES, PALETAS_BIOMA } from './gerador_mapas.js';
 import { TERRENOS_COMBATE } from './motor_combate.js';
 
 export class RenderizadorCanvas {
@@ -31,20 +31,38 @@ export class RenderizadorCanvas {
     }
   }
 
+  // Câmera centrada no jogador para mapas grandes (exibe janela 15x15 de tiles 32x32)
+  calcularCamera(alvoPos, larguraMapa, alturaMapa, tilesVisiveis = 15) {
+    const metade = Math.floor(tilesVisiveis / 2);
+    const camX = Math.max(0, Math.min(larguraMapa - tilesVisiveis, alvoPos.x - metade));
+    const camY = Math.max(0, Math.min(alturaMapa - tilesVisiveis, alvoPos.y - metade));
+    return { camX, camY, tilesVisiveis };
+  }
+
   desenharMapaIlha(mapa, jogadorPos, jogador) {
     const tamanhoTile = 32;
-    this.limpar('#0c4a6e');
+    const paletaBioma = PALETAS_BIOMA[mapa.bioma] || PALETAS_BIOMA.tropical;
+    this.limpar(paletaBioma.agua);
 
-    for (let y = 0; y < mapa.altura; y++) {
-      for (let x = 0; x < mapa.largura; x++) {
-        const tipo = mapa.matriz[y][x];
-        this.desenharTile32(x * tamanhoTile, y * tamanhoTile, tipo, x, y);
+    const { camX, camY, tilesVisiveis } = this.calcularCamera(jogadorPos, mapa.largura, mapa.altura, 15);
+
+    for (let vy = 0; vy < tilesVisiveis; vy++) {
+      for (let vx = 0; vx < tilesVisiveis; vx++) {
+        const gx = camX + vx;
+        const gy = camY + vy;
+        if (gy >= mapa.altura || gx >= mapa.largura) continue;
+
+        const tipo = mapa.matriz[gy][gx];
+        this.desenharTile32(vx * tamanhoTile, vy * tamanhoTile, tipo, gx, gy, paletaBioma);
       }
     }
 
+    const telaX = (jogadorPos.x - camX) * tamanhoTile;
+    const telaY = (jogadorPos.y - camY) * tamanhoTile;
+
     this.desenharPersonagem(
-      jogadorPos.x * tamanhoTile,
-      jogadorPos.y * tamanhoTile,
+      telaX,
+      telaY,
       jogador.aparencia,
       jogador.raca.id,
       1,
@@ -57,17 +75,35 @@ export class RenderizadorCanvas {
     const tamanhoTile = 32;
     this.limpar('#0369a1');
 
-    for (let y = 0; y < mapa.altura; y++) {
-      for (let x = 0; x < mapa.largura; x++) {
-        const tipo = mapa.matriz[y][x];
-        this.desenharTile32(x * tamanhoTile, y * tamanhoTile, tipo, x, y);
+    const { camX, camY, tilesVisiveis } = this.calcularCamera(navioPos, mapa.largura, mapa.altura, 15);
+
+    for (let vy = 0; vy < tilesVisiveis; vy++) {
+      for (let vx = 0; vx < tilesVisiveis; vx++) {
+        const gx = camX + vx;
+        const gy = camY + vy;
+        if (gy >= mapa.altura || gx >= mapa.largura) continue;
+
+        const tipo = mapa.matriz[gy][gx];
+        this.desenharTile32(vx * tamanhoTile, vy * tamanhoTile, tipo, gx, gy, null);
+
+        // Desenha rótulo curto acima das ilhas oficiais visíveis
+        if (tipo === TIPOS_TILE.ILHA_OCEANO && mapa.ilhasPorCoord[`${gx},${gy}`]) {
+          const nomeCurto = mapa.ilhasPorCoord[`${gx},${gy}`].nome.split('(')[0].trim();
+          this.ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+          this.ctx.fillRect(vx * tamanhoTile - 12, vy * tamanhoTile - 11, 56, 11);
+          this.ctx.fillStyle = '#facc15';
+          this.ctx.font = 'bold 8px sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.fillText(nomeCurto.slice(0, 12), vx * tamanhoTile + 16, vy * tamanhoTile - 3);
+        }
       }
     }
 
-    this.desenharNavioJogador(navioPos.x * tamanhoTile, navioPos.y * tamanhoTile, faccaoJogador);
+    const telaX = (navioPos.x - camX) * tamanhoTile;
+    const telaY = (navioPos.y - camY) * tamanhoTile;
+    this.desenharNavioJogador(telaX, telaY, faccaoJogador);
   }
 
-  // Renderiza o Grid Tático 10x10 (48px por célula no canvas 480x480)
   desenharCombateTatico(grid, unidades, celulasValidas = [], modoAcao = 'mover') {
     const tam = 48;
     this.limpar('#0f172a');
@@ -101,7 +137,6 @@ export class RenderizadorCanvas {
           this.ctx.fillStyle = '#94a3b8';
           this.ctx.fillRect(px, py, tam, tam);
         } else {
-          // Piso de madeira/arena alternado
           this.ctx.fillStyle = (x + y) % 2 === 0 ? '#334155' : '#1e293b';
           this.ctx.fillRect(px, py, tam, tam);
         }
@@ -111,20 +146,17 @@ export class RenderizadorCanvas {
       }
     }
 
-    // Destaque de alcance (Azul para mover, Vermelho/Dourado para atacar/poder)
     for (const cel of celulasValidas) {
       this.ctx.fillStyle =
         modoAcao === 'mover' ? 'rgba(56, 189, 248, 0.32)' : 'rgba(239, 68, 68, 0.35)';
       this.ctx.fillRect(cel.x * tam + 2, cel.y * tam + 2, tam - 4, tam - 4);
     }
 
-    // Desenha combatentes vivos e suas barras de vida
     for (const u of unidades) {
       if (u.hpAtual <= 0) continue;
       const px = u.x * tam + 8;
       const py = u.y * tam + 10;
 
-      // Aura de Haki do Armamento se ativa
       if (u.armamentoAtivo) {
         this.ctx.strokeStyle = '#ec4899';
         this.ctx.lineWidth = 2;
@@ -141,7 +173,6 @@ export class RenderizadorCanvas {
         u.akumaNoMi ? u.akumaNoMi.paleta_cores : null
       );
 
-      // Barra de HP acima do sprite
       const larguraBarra = 36;
       const pctHp = Math.max(0, u.hpAtual / u.hpMax);
       this.ctx.fillStyle = '#0f172a';
@@ -151,7 +182,6 @@ export class RenderizadorCanvas {
     }
   }
 
-  // Sistema Procedural de VFX com Hitstop e Screen Shake
   async animarVFX({ tipo, origem, destino, cores, onRenderBase }) {
     const tam = 48;
     const ox = origem.x * tam + 24;
@@ -164,7 +194,6 @@ export class RenderizadorCanvas {
       const t = f / frames;
       this.ctx.save();
 
-      // Screen shake nos frames de impacto
       if (f > frames * 0.5) {
         const shakeX = (Math.random() - 0.5) * 8;
         const shakeY = (Math.random() - 0.5) * 8;
@@ -181,7 +210,6 @@ export class RenderizadorCanvas {
         this.ctx.fillStyle = cores[1] || '#ffffff';
         this.ctx.fillRect(cx - 4, cy - 4, 8, 8);
       } else {
-        // Explosão / partículas em área / transformação / terreno
         const qtdParticulas = 18;
         for (let p = 0; p < qtdParticulas; p++) {
           const angulo = (Math.PI * 2 * p) / qtdParticulas + t;
@@ -197,7 +225,6 @@ export class RenderizadorCanvas {
       await new Promise(r => setTimeout(r, 28));
     }
 
-    // Hitstop breve no impacto final
     await new Promise(r => setTimeout(r, 90));
     onRenderBase();
   }
@@ -217,17 +244,41 @@ export class RenderizadorCanvas {
     this.ctx.fillRect(px + 13, py + 9, 6, 6);
   }
 
-  desenharTile32(px, py, tipo, gx, gy) {
+  desenharTile32(px, py, tipo, gx, gy, paletaBioma = null) {
     const info = INFO_TILES[tipo];
-    this.ctx.fillStyle = info.corBase;
-    this.ctx.fillRect(px, py, 32, 32);
+    let corBase = info.corBase;
+    let corDetalhe = info.corDetalhe;
 
-    this.ctx.fillStyle = info.corDetalhe;
+    if (paletaBioma) {
+      if (tipo === TIPOS_TILE.AGUA_PROFUNDA) corBase = paletaBioma.agua;
+      if (tipo === TIPOS_TILE.AREIA) corBase = paletaBioma.borda;
+      if (tipo === TIPOS_TILE.GRAMA) {
+        corBase = paletaBioma.solo;
+        corDetalhe = paletaBioma.detalheSolo;
+      }
+      if (tipo === TIPOS_TILE.PEDRA) corBase = paletaBioma.obstaculo;
+    }
+
+    this.ctx.fillStyle = corBase;
+    this.ctx.fillRect(px, py, 32, 32);
+    this.ctx.fillStyle = corDetalhe;
 
     if (tipo === TIPOS_TILE.AGUA_PROFUNDA || tipo === TIPOS_TILE.MAR_ABERTO) {
       const onda = (gx + gy) % 2 === 0 ? 6 : 16;
       this.ctx.fillRect(px + onda, py + 10, 10, 2);
       this.ctx.fillRect(px + 4, py + 22, 12, 2);
+    } else if (tipo === TIPOS_TILE.CALM_BELT) {
+      this.ctx.fillStyle = '#e0f2fe';
+      this.ctx.fillRect(px + 4, py + 14, 24, 2);
+    } else if (tipo === TIPOS_TILE.RED_LINE) {
+      this.ctx.fillStyle = '#7f1d1d';
+      this.ctx.fillRect(px + 4, py + 4, 10, 10);
+      this.ctx.fillRect(px + 18, py + 18, 10, 10);
+    } else if (tipo === TIPOS_TILE.REVERSE_MOUNTAIN) {
+      this.ctx.fillStyle = '#38bdf8';
+      this.ctx.fillRect(px + 10, py, 12, 32);
+      this.ctx.fillStyle = '#facc15';
+      this.ctx.fillRect(px + 14, py + 8, 4, 16);
     } else if (tipo === TIPOS_TILE.AREIA) {
       this.ctx.fillRect(px + 8, py + 8, 2, 2);
       this.ctx.fillRect(px + 22, py + 18, 2, 2);
@@ -238,7 +289,7 @@ export class RenderizadorCanvas {
       this.ctx.fillRect(px + 14, py + 22, 2, 4);
     } else if (tipo === TIPOS_TILE.PEDRA) {
       this.ctx.fillRect(px + 4, py + 4, 24, 24);
-      this.ctx.fillStyle = '#64748b';
+      this.ctx.fillStyle = 'rgba(255,255,255,0.2)';
       this.ctx.fillRect(px + 6, py + 6, 10, 8);
     } else if (tipo === TIPOS_TILE.TAVERNA) {
       this.ctx.fillStyle = '#451a03';
@@ -270,11 +321,11 @@ export class RenderizadorCanvas {
       this.ctx.fillRect(px + 13, py + 20, 6, 9);
     } else if (tipo === TIPOS_TILE.ILHA_OCEANO) {
       this.ctx.fillStyle = '#fde047';
-      this.ctx.fillRect(px + 5, py + 8, 22, 16);
+      this.ctx.fillRect(px + 4, py + 7, 24, 18);
       this.ctx.fillStyle = '#16a34a';
-      this.ctx.fillRect(px + 8, py + 10, 16, 12);
+      this.ctx.fillRect(px + 7, py + 9, 18, 14);
       this.ctx.fillStyle = '#78350f';
-      this.ctx.fillRect(px + 15, py + 6, 2, 6);
+      this.ctx.fillRect(px + 15, py + 5, 2, 6);
     } else if (tipo === TIPOS_TILE.NAUFRAGIO) {
       this.ctx.fillStyle = '#92400e';
       this.ctx.fillRect(px + 8, py + 14, 14, 10);
@@ -292,7 +343,7 @@ export class RenderizadorCanvas {
       this.ctx.fillRect(px + 10, py + 7, 12, 11);
     }
 
-    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.14)';
     this.ctx.strokeRect(px, py, 32, 32);
   }
 
