@@ -20,7 +20,6 @@
   <main id="container-principal" class="container-principal">
     <!-- TELA 1: CRIAÇÃO DE PERSONAGEM -->
     <section id="tela-criacao" class="tela-ativa layout-hibrido">
-      <!-- Painel Esquerdo: Canvas Procedural & Resumo -->
       <aside class="painel-visual">
         <h2>Visual do Combatente</h2>
         <div class="moldura-canvas-preview">
@@ -45,7 +44,6 @@
         </div>
       </aside>
 
-      <!-- Painel Direito: Formulário de Ficha -->
       <div class="painel-narrativo">
         <h2>Forje Sua Lenda nos Mares</h2>
 
@@ -78,7 +76,6 @@
           </div>
         </div>
 
-        <!-- Distribuição de Atributos -->
         <div class="secao-box">
           <div class="cabecalho-box">
             <h3>Distribuição de Atributos</h3>
@@ -87,7 +84,6 @@
           <div id="grade-atributos" class="grade-atributos"></div>
         </div>
 
-        <!-- Haki e Akuma no Mi -->
         <div class="grupo-grid-2">
           <div class="campo-form">
             <label for="select-haki">Afinidade Inicial de Haki</label>
@@ -106,7 +102,6 @@
           </div>
         </div>
 
-        <!-- Customização de Sprite -->
         <div class="secao-box">
           <h3>Customização do Sprite 32x32</h3>
           <div class="grade-cores">
@@ -131,8 +126,66 @@
       </div>
     </section>
 
-    <!-- TELA 2: JOGO PRINCIPAL (Placeholder para Fase 3) -->
-    <section id="tela-jogo" class="oculto"></section>
+    <!-- TELA 2: EXPLORAÇÃO E COMBATE -->
+    <section id="tela-jogo" class="oculto layout-jogo">
+      <!-- Esquerda: Canvas do Mapa / Grid Tático -->
+      <div class="painel-mapa">
+        <div class="cabecalho-mapa">
+          <h2 id="titulo-local">Ilha de Origem</h2>
+          <span id="coordenadas-jogador" class="badge-pontos">Pos: (7, 7)</span>
+        </div>
+
+        <div class="moldura-canvas-jogo">
+          <canvas id="canvas-jogo" width="480" height="480"></canvas>
+        </div>
+
+        <div class="controles-direcionais">
+          <p class="dica-controles">Use <strong>WASD</strong>, <strong>Setas</strong> ou os botões abaixo para explorar:</p>
+          <div class="dpad">
+            <button type="button" class="btn-dpad" data-dir="cima">▲</button>
+            <div class="dpad-meio">
+              <button type="button" class="btn-dpad" data-dir="esquerda">◀</button>
+              <button type="button" class="btn-dpad" data-dir="baixo">▼</button>
+              <button type="button" class="btn-dpad" data-dir="direita">▶</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="legenda-mapa">
+          <span><i style="background:#f59e0b"></i> Taverna</span>
+          <span><i style="background:#dc2626"></i> Dojo</span>
+          <span><i style="background:#3b82f6"></i> Marinha</span>
+          <span><i style="background:#38bdf8"></i> Porto</span>
+        </div>
+      </div>
+
+      <!-- Direita: Ficha Rápida + Narração e Escolhas -->
+      <aside class="painel-direito-jogo">
+        <div class="cartao-resumo" id="hud-jogador">
+          <div class="hud-linha-topo">
+            <strong id="hud-nome">Rael</strong>
+            <span id="hud-faccao" class="badge-faccao">PIRATA</span>
+          </div>
+          <div class="hud-barras">
+            <div>HP: <span id="hud-hp">20/20</span></div>
+            <div>Energia: <span id="hud-energia">50/50</span></div>
+            <div>Berries: <span id="hud-berries">฿ 5.000</span></div>
+            <div>Suprimentos: <span id="hud-suprimentos">100%</span></div>
+          </div>
+        </div>
+
+        <div class="caixa-narrativa">
+          <h3 id="narrativa-titulo">Bem-vindo à Ilha de Origem</h3>
+          <p id="narrativa-texto">Explore a ilha caminhando até os edifícios marcados no mapa para treinar, descansar ou partir para o mar.</p>
+          <div id="narrativa-opcoes" class="narrativa-opcoes"></div>
+        </div>
+
+        <div class="diario-bordo">
+          <h3>📜 Diário de Bordo</h3>
+          <ul id="lista-log" class="lista-log"></ul>
+        </div>
+      </aside>
+    </section>
   </main>
 
   <script type="module" src="principal.js"></script>
