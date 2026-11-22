@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lendas do Novo Mundo - RPG Tático</title>
+  <link rel="stylesheet" href="estilos.css" />
+</head>
+<body>
+  <header class="cabecalho-principal">
+    <div class="titulo-jogo">
+      <span class="icone-ancora">⚓</span>
+      <h1>LENDAS DO NOVO MUNDO</h1>
+    </div>
+    <div id="barra-status-topo" class="barra-status-topo">
+      <span>Fase Atual: Criação de Personagem</span>
+    </div>
+  </header>
+
+  <main id="container-principal" class="container-principal">
+    <!-- TELA 1: CRIAÇÃO DE PERSONAGEM -->
+    <section id="tela-criacao" class="tela-ativa layout-hibrido">
+      <!-- Painel Esquerdo: Canvas Procedural & Resumo -->
+      <aside class="painel-visual">
+        <h2>Visual do Combatente</h2>
+        <div class="moldura-canvas-preview">
+          <canvas id="canvas-preview" width="192" height="192"></canvas>
+        </div>
+        <div class="controles-preview">
+          <button type="button" id="btn-alternar-zoan" class="btn-secundario oculto">
+            Alternar Forma Zoan
+          </button>
+        </div>
+
+        <div class="cartao-resumo">
+          <h3>Status Iniciais</h3>
+          <ul class="lista-status">
+            <li><strong>HP Máximo:</strong> <span id="resumo-hp">10</span></li>
+            <li><strong>Energia / Haki:</strong> <span id="resumo-energia">50</span></li>
+            <li><strong>Defesa (CA):</strong> <span id="resumo-defesa">10</span></li>
+            <li><strong>Movimento:</strong> <span id="resumo-movimento">6</span> quad.</li>
+            <li><strong>Natação:</strong> <span id="resumo-natacao">Sim</span></li>
+          </ul>
+          <div id="resumo-habilidades" class="resumo-habilidades"></div>
+        </div>
+      </aside>
+
+      <!-- Painel Direito: Formulário de Ficha -->
+      <div class="painel-narrativo">
+        <h2>Forje Sua Lenda nos Mares</h2>
+
+        <div class="grupo-grid-2">
+          <div class="campo-form">
+            <label for="input-nome">Nome do Personagem</label>
+            <input type="text" id="input-nome" placeholder="Ex: Monkey D. Rael" value="Rael" />
+          </div>
+
+          <div class="campo-form">
+            <label for="select-faccao">Facção</label>
+            <select id="select-faccao">
+              <option value="pirata">Pirata (Liberdade e Recompensa)</option>
+              <option value="marinheiro">Marinheiro (Justiça e Ordem)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grupo-grid-2">
+          <div class="campo-form">
+            <label for="select-raca">Raça</label>
+            <select id="select-raca"></select>
+            <small id="desc-raca" class="texto-ajuda"></small>
+          </div>
+
+          <div class="campo-form">
+            <label for="select-classe">Estilo de Luta / Classe</label>
+            <select id="select-classe"></select>
+            <small id="desc-classe" class="texto-ajuda"></small>
+          </div>
+        </div>
+
+        <!-- Distribuição de Atributos -->
+        <div class="secao-box">
+          <div class="cabecalho-box">
+            <h3>Distribuição de Atributos</h3>
+            <span class="badge-pontos">Pontos Restantes: <strong id="pontos-restantes">8</strong></span>
+          </div>
+          <div id="grade-atributos" class="grade-atributos"></div>
+        </div>
+
+        <!-- Haki e Akuma no Mi -->
+        <div class="grupo-grid-2">
+          <div class="campo-form">
+            <label for="select-haki">Afinidade Inicial de Haki</label>
+            <select id="select-haki">
+              <option value="nenhum">Nenhum (Treinar nos Mares)</option>
+            </select>
+            <small id="desc-haki" class="texto-ajuda"></small>
+          </div>
+
+          <div class="campo-form">
+            <label for="select-akuma">Akuma no Mi (Opcional)</label>
+            <select id="select-akuma">
+              <option value="nenhuma">Nenhuma (Pode Nadar)</option>
+            </select>
+            <small id="desc-akuma" class="texto-ajuda"></small>
+          </div>
+        </div>
+
+        <!-- Customização de Sprite -->
+        <div class="secao-box">
+          <h3>Customização do Sprite 32x32</h3>
+          <div class="grade-cores">
+            <label>Pele <input type="color" id="cor-pele" value="#f1c27d" /></label>
+            <label>Cabelo <input type="color" id="cor-cabelo" value="#1e293b" /></label>
+            <label>Roupa <input type="color" id="cor-roupa" value="#dc2626" /></label>
+            <label>Calça <input type="color" id="cor-calca" value="#1d4ed8" /></label>
+            <label>Acessório
+              <select id="select-acessorio">
+                <option value="chapeu_pirata">Chapéu de Palha</option>
+                <option value="bone_marinha">Boné da Marinha</option>
+                <option value="bandana">Bandana</option>
+                <option value="">Sem Chapéu</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <button type="button" id="btn-iniciar-aventura" class="btn-primario">
+          Zarpar para a Ilha de Origem ⛵
+        </button>
+      </div>
+    </section>
+
+    <!-- TELA 2: JOGO PRINCIPAL (Placeholder para Fase 3) -->
+    <section id="tela-jogo" class="oculto"></section>
+  </main>
+
+  <script type="module" src="principal.js"></script>
+</body>
+</html>
