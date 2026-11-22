@@ -1,5 +1,14 @@
 import { TIPOS_TILE } from './gerador_mapas.js';
 
+const NOMES_ILHAS_ALEATORIAS = [
+  'Ilha Orange (East Blue)',
+  'Arquipélago Gecko',
+  'Restaurante Baratie',
+  'Ilha Loguetown',
+  'Ilha Conomi',
+  'Ilha Drum (Paraíso)'
+];
+
 export class MotorNarrativo {
   constructor(estadoJogo, callbacks) {
     this.estadoJogo = estadoJogo;
@@ -104,7 +113,7 @@ export class MotorNarrativo {
 
       case TIPOS_TILE.PORTO:
         return {
-          titulo: '⛵ Porto da Ilha de Origem',
+          titulo: '⛵ Porto da Ilha',
           texto: 'As ondas batem contra o píer de madeira. Seu barco está ancorado e pronto para ganhar o mar aberto.',
           opcoes: [
             {
@@ -119,7 +128,7 @@ export class MotorNarrativo {
               }
             },
             {
-              texto: '🧭 Zarpar para o Oceano (Overworld Marítimo - Fase 4)',
+              texto: '🧭 Zarpar para o Oceano (Overworld Marítimo)',
               acao: () => {
                 this.callbacks.zarparOceano();
                 return 'Âncoras recolhidas! Você partiu para o mar aberto.';
@@ -131,5 +140,132 @@ export class MotorNarrativo {
       default:
         return null;
     }
+  }
+
+  gerarEventoMaritimo(tipoTile, posX, posY) {
+    const jogador = this.estadoJogo.jogador;
+
+    if (tipoTile === TIPOS_TILE.ILHA_OCEANO) {
+      const nomeIlha = NOMES_ILHAS_ALEATORIAS[(posX + posY) % NOMES_ILHAS_ALEATORIAS.length];
+      return {
+        titulo: `🏝️ Terra à Vista: ${nomeIlha}`,
+        texto: 'Seu vigia avistou um porto seguro e edifícios movimentados na costa desta ilha.',
+        opcoes: [
+          {
+            texto: '⚓ Ancorar e desembarcar na ilha',
+            acao: () => {
+              this.callbacks.atracarIlha(nomeIlha);
+              return `Você desembarcou em ${nomeIlha}.`;
+            }
+          },
+          {
+            texto: 'Continuar navegando pelo oceano',
+            acao: () => 'Você mantém o leme firme e segue viagem pelos mares.'
+          }
+        ]
+      };
+    }
+
+    if (tipoTile === TIPOS_TILE.NAUFRAGIO) {
+      return {
+        titulo: '📦 Destroços Flutuantes',
+        texto: 'Barris lacrados e caixas de madeira boiam entre restos de uma antiga embarcação mercante.',
+        opcoes: [
+          {
+            texto: 'Içar a carga a bordo (+20 Suprimentos e +฿ 1.200)',
+            acao: () => {
+              jogador.suprimentos = Math.min(100, jogador.suprimentos + 20);
+              jogador.berries += 1200;
+              this.callbacks.limparTileOceano(posX, posY);
+              return 'Você resgatou barris de comida e um cofre com ฿ 1.200!';
+            }
+          }
+        ]
+      };
+    }
+
+    if (tipoTile === TIPOS_TILE.REDEMOINHO) {
+      return {
+        titulo: '🌀 Redemoinho e Tempestade Súbita!',
+        texto: 'O clima muda em segundos! Ondas gigantes atingem o casco enquanto correntes tentam puxar o navio.',
+        opcoes: [
+          {
+            texto: 'Forçar o leme contra a corrente (-15 Suprimentos, +35 XP)',
+            acao: () => {
+              jogador.suprimentos = Math.max(0, jogador.suprimentos - 15);
+              jogador.xp += 35;
+              this.callbacks.limparTileOceano(posX, posY);
+              return 'Com manobras arriscadas, você escapou do redemoinho! (-15 Suprimentos, +35 XP)';
+            }
+          }
+        ]
+      };
+    }
+
+    if (tipoTile === TIPOS_TILE.NAVIO_INIMIGO) {
+      const inimigo = jogador.faccao === 'pirata' ? 'Fragata da Marinha' : 'Galeão Pirata';
+      return {
+        titulo: `🏴‍☠️ Abordagem Naval: ${inimigo}!`,
+        texto: `Um ${inimigo} dispara tiros de advertência e lança ganchos de abordagem contra o seu convés!`,
+        opcoes: [
+          {
+            texto: '⚔️ Preparar para o combate no convés!',
+            acao: () => {
+              this.callbacks.limparTileOceano(posX, posY);
+              this.callbacks.iniciarCombate('abordagem_naval');
+              return `Os ganchos prenderam os navios! O combate no convés vai começar!`;
+            }
+          },
+          {
+            texto: 'Tentar manobra evasiva (-10 Suprimentos)',
+            acao: () => {
+              if (jogador.suprimentos < 10) {
+                this.callbacks.iniciarCombate('abordagem_naval');
+                return 'Sem suprimentos para manobrar rápido, você foi alcançado e abordado!';
+              }
+              jogador.suprimentos -= 10;
+              return 'Você escapou por pouco aproveitando o vento a favor! (-10 Suprimentos)';
+            }
+          }
+        ]
+      };
+    }
+
+    // Evento aleatório em mar aberto (20% de chance)
+    if (tipoTile === TIPOS_TILE.MAR_ABERTO && Math.random() < 0.2) {
+      const eventosAleatorios = [
+        {
+          titulo: '🐟 Cardume de Peixes Gigantes',
+          texto: 'Um cardume de peixes saborosos acompanha o casco do navio.',
+          opcoes: [
+            {
+              texto: 'Pescar para o estoque (+15 Suprimentos)',
+              acao: () => {
+                jogador.suprimentos = Math.min(100, jogador.suprimentos + 15);
+                return 'Pescaria farta! O estoque de suprimentos subiu em +15%.';
+              }
+            }
+          ]
+        },
+        {
+          titulo: '🕊️ Gaivota Carteira do Jornal Mundial',
+          texto: 'Uma gaivota pousa na amurada oferecendo a edição do dia com notícias dos mares.',
+          opcoes: [
+            {
+              texto: 'Comprar jornal por ฿ 100 (+20 XP)',
+              acao: () => {
+                if (jogador.berries < 100) return 'Você não tem ฿ 100 trocados para a gaivota.';
+                jogador.berries -= 100;
+                jogador.xp += 20;
+                return 'Você leu sobre os movimentos dos Yonkou e aprendeu novas rotas (+20 XP).';
+              }
+            }
+          ]
+        }
+      ];
+      return eventosAleatorios[Math.floor(Math.random() * eventosAleatorios.length)];
+    }
+
+    return null;
   }
 }
