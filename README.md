@@ -32,6 +32,23 @@ As mecânicas de progressão, raças, estilos de luta, Haki e Akuma no Mi são a
   - Sistema de turnos com pontos de movimento e ação.
   - **Interação Ambiental e Empurrão (*Knockback*):** Arremesse inimigos contra obstáculos ou para dentro da água — **fatal para usuários de Akuma no Mi!**
   - **Haki e Akuma no Mi:** 12 frutas jogáveis e os 3 tipos de Haki (Armamento, Observação e Rei).
+
+  
   - **Efeitos Visuais Procedurais (VFX):** Projéteis animados, explosões com partículas, troca dinâmica de sprite para formas Zoan, alteração de terreno no grid, *screen shake* e *hitstop*.
 
+## 🚀 Como Executar Localmente
+
+Como o projeto utiliza **ES Modules (`import`/`export`)** e carrega arquivos `.json` via `fetch()`, os navegadores exigem que ele seja executado através de um servidor local (para evitar bloqueios de CORS do protocolo `file://`).
+
+1. **Clone ou baixe** a pasta do projeto.
+2. **Inicie um servidor local** na pasta raiz usando uma das opções abaixo:
+   - **VS Code:** Instale a extensão *Live Server*, clique com o botão direito em `index.html` e selecione **"Open with Live Server"**.
+   - **Python:** Execute `python -m http.server 8000` no terminal e acesse `http://localhost:8000`.
+   - **Node.js:** Execute `npx serve` no terminal e acesse o endereço exibido.
+
 ---
+
+## 📜 Créditos e Inspiração
+
+- Baseado na obra **One Piece**, criada por *Eiichiro Oda*.
+- Mecânicas adaptadas do sistema *Dungeons & Devil Fruits (5e Homebrew).
