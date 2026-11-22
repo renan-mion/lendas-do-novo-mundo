@@ -1,5 +1,5 @@
 import { RenderizadorCanvas } from './motor/renderizador_canvas.js';
-import { GeradorMapas, INFO_TILES } from './motor/gerador_mapas.js';
+import { GeradorMapas, INFO_TILES, TIPOS_TILE } from './motor/gerador_mapas.js';
 import { MotorNarrativo } from './motor/motor_narrativo.js';
 
 const NOMES_ATRIBUTOS = {
@@ -16,9 +16,11 @@ export const estadoJogo = {
   dadosPoderes: null,
   configSprites: null,
   jogador: null,
-  faseAtual: 'criacao',
+  faseAtual: 'criacao', // 'criacao' | 'ilha' | 'oceano' | 'combate'
   mapaAtual: null,
-  posicaoJogador: { x: 7, y: 7 }
+  mapaOceano: null,
+  posicaoJogador: { x: 7, y: 7 },
+  posicaoNavio: { x: 7, y: 7 }
 };
 
 class GerenciadorCriacao {
@@ -345,41 +347,105 @@ class ControladorMundo {
     this.geradorMapas = new GeradorMapas(15, 15);
     this.renderizador = null;
     this.motorNarrativo = null;
+    this.controlesRegistrados = false;
   }
 
-  iniciarExploracaoIlha() {
-    estadoJogo.faseAtual = 'ilha';
+  iniciarAventura() {
     document.getElementById('tela-criacao').classList.add('oculto');
     document.getElementById('tela-jogo').classList.remove('oculto');
 
     const canvas = document.getElementById('canvas-jogo');
     this.renderizador = new RenderizadorCanvas(canvas, estadoJogo.configSprites);
 
-    estadoJogo.mapaAtual = this.geradorMapas.gerarIlhaOrigem(estadoJogo.jogador.faccao);
-    estadoJogo.posicaoJogador = { ...estadoJogo.mapaAtual.posicaoInicial };
-
     this.motorNarrativo = new MotorNarrativo(estadoJogo, {
       iniciarCombate: (tipoInimigo) => {
         this.registrarLog(`⚔️ Preparando combate tático 10x10 contra: ${tipoInimigo} (Será ativado na Fase 5!)`);
       },
       zarparOceano: () => {
-        this.registrarLog(`⛵ Navegação marítima procedural será ativada na Fase 4!`);
+        this.entrarModoOceano();
+      },
+      atracarIlha: (nomeIlha) => {
+        this.entrarModoIlha(nomeIlha);
+      },
+      limparTileOceano: (x, y) => {
+        if (estadoJogo.mapaOceano) {
+          estadoJogo.mapaOceano.matriz[y][x] = TIPOS_TILE.MAR_ABERTO;
+          this.renderizar();
+        }
       }
     });
+
+    if (!this.controlesRegistrados) {
+      this.registrarControles();
+      this.controlesRegistrados = true;
+    }
+
+    this.entrarModoIlha(null);
+  }
+
+  entrarModoIlha(nomeIlhaCustom) {
+    estadoJogo.faseAtual = 'ilha';
+    estadoJogo.mapaAtual = this.geradorMapas.gerarIlhaOrigem(estadoJogo.jogador.faccao, nomeIlhaCustom);
+    estadoJogo.posicaoJogador = { ...estadoJogo.mapaAtual.posicaoInicial };
 
     document.getElementById('barra-status-topo').innerHTML =
       `<span>Fase Atual: Exploração Terrestre (${estadoJogo.mapaAtual.nome})</span>`;
     document.getElementById('titulo-local').textContent = estadoJogo.mapaAtual.nome;
+    document.getElementById('coordenadas-jogador').textContent =
+      `Pos: (${estadoJogo.posicaoJogador.x}, ${estadoJogo.posicaoJogador.y})`;
 
-    this.registrarControles();
+    this.atualizarLegenda('ilha');
     this.atualizarHud();
     this.renderizar();
     this.registrarLog(`Você desembarcou em ${estadoJogo.mapaAtual.nome}.`);
   }
 
+  entrarModoOceano() {
+    estadoJogo.faseAtual = 'oceano';
+    if (!estadoJogo.mapaOceano) {
+      estadoJogo.mapaOceano = this.geradorMapas.gerarOverworldOceano();
+      estadoJogo.posicaoNavio = { ...estadoJogo.mapaOceano.posicaoInicial };
+    }
+
+    document.getElementById('barra-status-topo').innerHTML =
+      `<span>Fase Atual: Navegação Marítima (East Blue)</span>`;
+    document.getElementById('titulo-local').textContent = estadoJogo.mapaOceano.nome;
+    document.getElementById('coordenadas-jogador').textContent =
+      `Navio: (${estadoJogo.posicaoNavio.x}, ${estadoJogo.posicaoNavio.y})`;
+
+    this.atualizarLegenda('oceano');
+    this.atualizarHud();
+    this.renderizar();
+
+    document.getElementById('narrativa-titulo').textContent = '🧭 Navegando pelo East Blue';
+    document.getElementById('narrativa-texto').textContent =
+      'Velas içadas! Cada milha náutica consome 2% de suprimentos. Explore ilhas, resgate destroços ou enfrente navios inimigos.';
+    document.getElementById('narrativa-opcoes').innerHTML = '';
+    this.registrarLog('Você zarpou para o mar aberto! Atenção ao nível de suprimentos.');
+  }
+
+  atualizarLegenda(modo) {
+    const legenda = document.querySelector('.legenda-mapa');
+    if (modo === 'ilha') {
+      legenda.innerHTML = `
+        <span><i style="background:#f59e0b"></i> Taverna</span>
+        <span><i style="background:#dc2626"></i> Dojo</span>
+        <span><i style="background:#3b82f6"></i> Marinha</span>
+        <span><i style="background:#38bdf8"></i> Porto</span>
+      `;
+    } else {
+      legenda.innerHTML = `
+        <span><i style="background:#16a34a"></i> Ilha</span>
+        <span><i style="background:#d97706"></i> Destroços</span>
+        <span><i style="background:#e0f2fe"></i> Correnteza</span>
+        <span><i style="background:#ef4444"></i> Navio Hostil</span>
+      `;
+    }
+  }
+
   registrarControles() {
     window.addEventListener('keydown', (e) => {
-      if (estadoJogo.faseAtual !== 'ilha') return;
+      if (estadoJogo.faseAtual !== 'ilha' && estadoJogo.faseAtual !== 'oceano') return;
       const mapaTeclas = {
         ArrowUp: 'cima', w: 'cima', W: 'cima',
         ArrowDown: 'baixo', s: 'baixo', S: 'baixo',
@@ -388,20 +454,20 @@ class ControladorMundo {
       };
       if (mapaTeclas[e.key]) {
         e.preventDefault();
-        this.moverJogador(mapaTeclas[e.key]);
+        this.moverEntidade(mapaTeclas[e.key]);
       }
     });
 
     document.querySelectorAll('.btn-dpad').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (estadoJogo.faseAtual === 'ilha') {
-          this.moverJogador(btn.dataset.dir);
+        if (estadoJogo.faseAtual === 'ilha' || estadoJogo.faseAtual === 'oceano') {
+          this.moverEntidade(btn.dataset.dir);
         }
       });
     });
   }
 
-  moverJogador(direcao) {
+  moverEntidade(direcao) {
     const deltas = {
       cima: { dx: 0, dy: -1 },
       baixo: { dx: 0, dy: 1 },
@@ -409,34 +475,62 @@ class ControladorMundo {
       direita: { dx: 1, dy: 0 }
     };
 
-    const novoX = estadoJogo.posicaoJogador.x + deltas[direcao].dx;
-    const novoY = estadoJogo.posicaoJogador.y + deltas[direcao].dy;
-    const mapa = estadoJogo.mapaAtual;
+    if (estadoJogo.faseAtual === 'ilha') {
+      const novoX = estadoJogo.posicaoJogador.x + deltas[direcao].dx;
+      const novoY = estadoJogo.posicaoJogador.y + deltas[direcao].dy;
+      const mapa = estadoJogo.mapaAtual;
 
-    if (novoX < 0 || novoX >= mapa.largura || novoY < 0 || novoY >= mapa.altura) return;
+      if (novoX < 0 || novoX >= mapa.largura || novoY < 0 || novoY >= mapa.altura) return;
 
-    const tipoTile = mapa.matriz[novoY][novoX];
-    if (!INFO_TILES[tipoTile].caminhavel) {
-      this.registrarLog(`Caminho bloqueado por ${INFO_TILES[tipoTile].nome}.`);
-      return;
+      const tipoTile = mapa.matriz[novoY][novoX];
+      if (!INFO_TILES[tipoTile].caminhavel) {
+        this.registrarLog(`Caminho bloqueado por ${INFO_TILES[tipoTile].nome}.`);
+        return;
+      }
+
+      estadoJogo.posicaoJogador = { x: novoX, y: novoY };
+      document.getElementById('coordenadas-jogador').textContent = `Pos: (${novoX}, ${novoY})`;
+      this.renderizar();
+      this.exibirEvento(this.motorNarrativo.gerarEventoLocal(tipoTile), INFO_TILES[tipoTile].nome);
+    } else if (estadoJogo.faseAtual === 'oceano') {
+      const novoX = estadoJogo.posicaoNavio.x + deltas[direcao].dx;
+      const novoY = estadoJogo.posicaoNavio.y + deltas[direcao].dy;
+      const mapa = estadoJogo.mapaOceano;
+
+      if (novoX < 0 || novoX >= mapa.largura || novoY < 0 || novoY >= mapa.altura) return;
+
+      estadoJogo.posicaoNavio = { x: novoX, y: novoY };
+      document.getElementById('coordenadas-jogador').textContent = `Navio: (${novoX}, ${novoY})`;
+
+      // Consumo de suprimentos por deslocamento marítimo
+      const jogador = estadoJogo.jogador;
+      if (jogador.suprimentos > 0) {
+        jogador.suprimentos = Math.max(0, jogador.suprimentos - 2);
+      } else {
+        jogador.hpAtual = Math.max(1, jogador.hpAtual - 2);
+        this.registrarLog('⚠️ Sem suprimentos! A tripulação está sofrendo de fome (-2 HP).');
+      }
+
+      this.atualizarHud();
+      this.renderizar();
+
+      const tipoTile = mapa.matriz[novoY][novoX];
+      const eventoMar = this.motorNarrativo.gerarEventoMaritimo(tipoTile, novoX, novoY);
+      this.exibirEvento(eventoMar, 'Mar Aberto');
     }
-
-    estadoJogo.posicaoJogador = { x: novoX, y: novoY };
-    document.getElementById('coordenadas-jogador').textContent = `Pos: (${novoX}, ${novoY})`;
-    this.renderizar();
-    this.verificarEventoTile(tipoTile);
   }
 
-  verificarEventoTile(tipoTile) {
-    const evento = this.motorNarrativo.gerarEventoLocal(tipoTile);
+  exibirEvento(evento, tituloPadrao) {
     const tituloEl = document.getElementById('narrativa-titulo');
     const textoEl = document.getElementById('narrativa-texto');
     const opcoesEl = document.getElementById('narrativa-opcoes');
     opcoesEl.innerHTML = '';
 
     if (!evento) {
-      tituloEl.textContent = INFO_TILES[tipoTile].nome;
-      textoEl.textContent = 'Você caminha pela ilha observando o horizonte. Aproxime-se da Taverna, Dojo, Base da Marinha ou Porto.';
+      tituloEl.textContent = tituloPadrao;
+      textoEl.textContent = estadoJogo.faseAtual === 'ilha'
+        ? 'Você caminha pela ilha observando o horizonte. Aproxime-se da Taverna, Dojo, Base da Marinha ou Porto.'
+        : 'Ventos calmos sopram nas velas. Continue explorando o oceano em busca de ilhas ou tesouros.';
       return;
     }
 
@@ -479,16 +573,24 @@ class ControladorMundo {
   }
 
   renderizar() {
-    this.renderizador.desenharMapaIlha(
-      estadoJogo.mapaAtual,
-      estadoJogo.posicaoJogador,
-      estadoJogo.jogador
-    );
+    if (estadoJogo.faseAtual === 'ilha') {
+      this.renderizador.desenharMapaIlha(
+        estadoJogo.mapaAtual,
+        estadoJogo.posicaoJogador,
+        estadoJogo.jogador
+      );
+    } else if (estadoJogo.faseAtual === 'oceano') {
+      this.renderizador.desenharMapaOceano(
+        estadoJogo.mapaOceano,
+        estadoJogo.posicaoNavio,
+        estadoJogo.jogador.faccao
+      );
+    }
   }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   const mundo = new ControladorMundo();
-  const criador = new GerenciadorCriacao(() => mundo.iniciarExploracaoIlha());
+  const criador = new GerenciadorCriacao(() => mundo.iniciarAventura());
   criador.iniciar();
 });
