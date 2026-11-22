@@ -1,4 +1,6 @@
 import { RenderizadorCanvas } from './motor/renderizador_canvas.js';
+import { GeradorMapas, INFO_TILES } from './motor/gerador_mapas.js';
+import { MotorNarrativo } from './motor/motor_narrativo.js';
 
 const NOMES_ATRIBUTOS = {
   forca: 'Força',
@@ -14,11 +16,14 @@ export const estadoJogo = {
   dadosPoderes: null,
   configSprites: null,
   jogador: null,
-  faseAtual: 'criacao'
+  faseAtual: 'criacao',
+  mapaAtual: null,
+  posicaoJogador: { x: 7, y: 7 }
 };
 
 class GerenciadorCriacao {
-  constructor() {
+  constructor(onConcluir) {
+    this.onConcluir = onConcluir;
     this.pontosDisponiveis = 8;
     this.atributosBase = {
       forca: 10,
@@ -70,16 +75,7 @@ class GerenciadorCriacao {
     const aviso = document.createElement('div');
     aviso.style.cssText =
       'background:#450a0a; border:2px solid #ef4444; color:#fecaca; padding:1rem; border-radius:6px; margin-bottom:1rem; line-height:1.5;';
-
-    const protocoloArquivo = window.location.protocol === 'file:';
-    aviso.innerHTML = protocoloArquivo
-      ? `<strong>⚠️ Jogo aberto diretamente como arquivo local (file://)</strong><br/>
-         Os navegadores bloqueiam o carregamento dos arquivos JSON sem um servidor local.<br/>
-         <strong>Como abrir corretamente:</strong> Use a extensão <em>Live Server</em> no VS Code ou execute <code>python -m http.server 8000</code> na pasta do projeto.`
-      : `<strong>⚠️ Erro ao carregar os dados do jogo:</strong><br/>
-         ${erro.message}<br/>
-         <small>Verifique se as pastas <code>dados/</code>, <code>motor/</code> e <code>recursos/</code> estão com os nomes exatos.</small>`;
-
+    aviso.innerHTML = `<strong>⚠️ Erro ao carregar os dados do jogo:</strong><br/>${erro.message}`;
     painel.prepend(aviso);
   }
 
@@ -340,17 +336,159 @@ class GerenciadorCriacao {
       }
     };
 
-    console.log('Personagem criado com sucesso:', estadoJogo.jogador);
-    alert(
-      `Ficha confirmada para ${estadoJogo.jogador.nome} (${faccao.toUpperCase()})!\n` +
-      `Raça: ${raca.nome} | Classe: ${classe.nome}\n` +
-      `HP: ${estadoJogo.jogador.hpMax} | Energia: ${estadoJogo.jogador.energiaMax}\n\n` +
-      `Tudo pronto para construirmos a Ilha de Origem na Fase 3!`
+    this.onConcluir();
+  }
+}
+
+class ControladorMundo {
+  constructor() {
+    this.geradorMapas = new GeradorMapas(15, 15);
+    this.renderizador = null;
+    this.motorNarrativo = null;
+  }
+
+  iniciarExploracaoIlha() {
+    estadoJogo.faseAtual = 'ilha';
+    document.getElementById('tela-criacao').classList.add('oculto');
+    document.getElementById('tela-jogo').classList.remove('oculto');
+
+    const canvas = document.getElementById('canvas-jogo');
+    this.renderizador = new RenderizadorCanvas(canvas, estadoJogo.configSprites);
+
+    estadoJogo.mapaAtual = this.geradorMapas.gerarIlhaOrigem(estadoJogo.jogador.faccao);
+    estadoJogo.posicaoJogador = { ...estadoJogo.mapaAtual.posicaoInicial };
+
+    this.motorNarrativo = new MotorNarrativo(estadoJogo, {
+      iniciarCombate: (tipoInimigo) => {
+        this.registrarLog(`⚔️ Preparando combate tático 10x10 contra: ${tipoInimigo} (Será ativado na Fase 5!)`);
+      },
+      zarparOceano: () => {
+        this.registrarLog(`⛵ Navegação marítima procedural será ativada na Fase 4!`);
+      }
+    });
+
+    document.getElementById('barra-status-topo').innerHTML =
+      `<span>Fase Atual: Exploração Terrestre (${estadoJogo.mapaAtual.nome})</span>`;
+    document.getElementById('titulo-local').textContent = estadoJogo.mapaAtual.nome;
+
+    this.registrarControles();
+    this.atualizarHud();
+    this.renderizar();
+    this.registrarLog(`Você desembarcou em ${estadoJogo.mapaAtual.nome}.`);
+  }
+
+  registrarControles() {
+    window.addEventListener('keydown', (e) => {
+      if (estadoJogo.faseAtual !== 'ilha') return;
+      const mapaTeclas = {
+        ArrowUp: 'cima', w: 'cima', W: 'cima',
+        ArrowDown: 'baixo', s: 'baixo', S: 'baixo',
+        ArrowLeft: 'esquerda', a: 'esquerda', A: 'esquerda',
+        ArrowRight: 'direita', d: 'direita', D: 'direita'
+      };
+      if (mapaTeclas[e.key]) {
+        e.preventDefault();
+        this.moverJogador(mapaTeclas[e.key]);
+      }
+    });
+
+    document.querySelectorAll('.btn-dpad').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (estadoJogo.faseAtual === 'ilha') {
+          this.moverJogador(btn.dataset.dir);
+        }
+      });
+    });
+  }
+
+  moverJogador(direcao) {
+    const deltas = {
+      cima: { dx: 0, dy: -1 },
+      baixo: { dx: 0, dy: 1 },
+      esquerda: { dx: -1, dy: 0 },
+      direita: { dx: 1, dy: 0 }
+    };
+
+    const novoX = estadoJogo.posicaoJogador.x + deltas[direcao].dx;
+    const novoY = estadoJogo.posicaoJogador.y + deltas[direcao].dy;
+    const mapa = estadoJogo.mapaAtual;
+
+    if (novoX < 0 || novoX >= mapa.largura || novoY < 0 || novoY >= mapa.altura) return;
+
+    const tipoTile = mapa.matriz[novoY][novoX];
+    if (!INFO_TILES[tipoTile].caminhavel) {
+      this.registrarLog(`Caminho bloqueado por ${INFO_TILES[tipoTile].nome}.`);
+      return;
+    }
+
+    estadoJogo.posicaoJogador = { x: novoX, y: novoY };
+    document.getElementById('coordenadas-jogador').textContent = `Pos: (${novoX}, ${novoY})`;
+    this.renderizar();
+    this.verificarEventoTile(tipoTile);
+  }
+
+  verificarEventoTile(tipoTile) {
+    const evento = this.motorNarrativo.gerarEventoLocal(tipoTile);
+    const tituloEl = document.getElementById('narrativa-titulo');
+    const textoEl = document.getElementById('narrativa-texto');
+    const opcoesEl = document.getElementById('narrativa-opcoes');
+    opcoesEl.innerHTML = '';
+
+    if (!evento) {
+      tituloEl.textContent = INFO_TILES[tipoTile].nome;
+      textoEl.textContent = 'Você caminha pela ilha observando o horizonte. Aproxime-se da Taverna, Dojo, Base da Marinha ou Porto.';
+      return;
+    }
+
+    tituloEl.textContent = evento.titulo;
+    textoEl.textContent = evento.texto;
+
+    evento.opcoes.forEach(opcao => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-opcao';
+      btn.textContent = opcao.texto;
+      btn.addEventListener('click', () => {
+        const resultado = opcao.acao();
+        this.registrarLog(resultado);
+        textoEl.textContent = resultado;
+        this.atualizarHud();
+      });
+      opcoesEl.appendChild(btn);
+    });
+  }
+
+  atualizarHud() {
+    const j = estadoJogo.jogador;
+    document.getElementById('hud-nome').textContent = `${j.nome} (Nv. ${j.nivel} • ${j.xp} XP)`;
+    const badge = document.getElementById('hud-faccao');
+    badge.textContent = j.faccao.toUpperCase();
+    badge.className = `badge-faccao ${j.faccao}`;
+
+    document.getElementById('hud-hp').textContent = `${j.hpAtual}/${j.hpMax}`;
+    document.getElementById('hud-energia').textContent = `${j.energiaAtual}/${j.energiaMax}`;
+    document.getElementById('hud-berries').textContent = `฿ ${j.berries.toLocaleString('pt-BR')}`;
+    document.getElementById('hud-suprimentos').textContent = `${j.suprimentos}%`;
+  }
+
+  registrarLog(mensagem) {
+    const lista = document.getElementById('lista-log');
+    const item = document.createElement('li');
+    item.textContent = `• ${mensagem}`;
+    lista.prepend(item);
+  }
+
+  renderizar() {
+    this.renderizador.desenharMapaIlha(
+      estadoJogo.mapaAtual,
+      estadoJogo.posicaoJogador,
+      estadoJogo.jogador
     );
   }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const criador = new GerenciadorCriacao();
+  const mundo = new ControladorMundo();
+  const criador = new GerenciadorCriacao(() => mundo.iniciarExploracaoIlha());
   criador.iniciar();
 });
