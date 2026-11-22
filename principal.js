@@ -1,6 +1,7 @@
 import { RenderizadorCanvas } from './motor/renderizador_canvas.js';
 import { GeradorMapas, INFO_TILES, TIPOS_TILE } from './motor/gerador_mapas.js';
 import { MotorNarrativo } from './motor/motor_narrativo.js';
+import { MotorCombate } from './motor/motor_combate.js';
 
 const NOMES_ATRIBUTOS = {
   forca: 'Força',
@@ -17,6 +18,7 @@ export const estadoJogo = {
   configSprites: null,
   jogador: null,
   faseAtual: 'criacao', // 'criacao' | 'ilha' | 'oceano' | 'combate'
+  faseAnterior: 'ilha',
   mapaAtual: null,
   mapaOceano: null,
   posicaoJogador: { x: 7, y: 7 },
@@ -347,6 +349,7 @@ class ControladorMundo {
     this.geradorMapas = new GeradorMapas(15, 15);
     this.renderizador = null;
     this.motorNarrativo = null;
+    this.motorCombate = null;
     this.controlesRegistrados = false;
   }
 
@@ -357,9 +360,22 @@ class ControladorMundo {
     const canvas = document.getElementById('canvas-jogo');
     this.renderizador = new RenderizadorCanvas(canvas, estadoJogo.configSprites);
 
+    this.motorCombate = new MotorCombate(estadoJogo, this.renderizador, {
+      onLog: (msg) => {
+        this.registrarLog(msg);
+        this.atualizarHudCombate();
+      },
+      onAtualizarUI: (titulo, texto) => {
+        this.montarPainelAcoesCombate(titulo, texto);
+      },
+      onFimCombate: (vitoria) => {
+        this.finalizarBatalha(vitoria);
+      }
+    });
+
     this.motorNarrativo = new MotorNarrativo(estadoJogo, {
       iniciarCombate: (tipoInimigo) => {
-        this.registrarLog(`⚔️ Preparando combate tático 10x10 contra: ${tipoInimigo} (Será ativado na Fase 5!)`);
+        this.entrarModoCombate(tipoInimigo);
       },
       zarparOceano: () => {
         this.entrarModoOceano();
@@ -376,11 +392,129 @@ class ControladorMundo {
     });
 
     if (!this.controlesRegistrados) {
-      this.registrarControles();
+      this.registrarControles(canvas);
       this.controlesRegistrados = true;
     }
 
     this.entrarModoIlha(null);
+  }
+
+  entrarModoCombate(tipoInimigo) {
+    estadoJogo.faseAnterior = estadoJogo.faseAtual;
+    estadoJogo.faseAtual = 'combate';
+
+    document.getElementById('barra-status-topo').innerHTML =
+      `<span>Fase Atual: ⚔️ Combate Tático (Grid 10x10)</span>`;
+    document.getElementById('titulo-local').textContent = 'Arena de Combate (10x10)';
+    document.getElementById('coordenadas-jogador').textContent = 'Clique no grid para agir';
+    document.querySelector('.controles-direcionais').classList.add('oculto');
+
+    this.atualizarLegenda('combate');
+    this.motorCombate.iniciarBatalha(tipoInimigo);
+  }
+
+  montarPainelAcoesCombate(titulo, texto) {
+    const tituloEl = document.getElementById('narrativa-titulo');
+    const textoEl = document.getElementById('narrativa-texto');
+    const opcoesEl = document.getElementById('narrativa-opcoes');
+    const jogador = this.motorCombate.obterJogador();
+
+    tituloEl.textContent = titulo;
+    textoEl.textContent = texto;
+    opcoesEl.innerHTML = '';
+
+    // Botão Mover
+    const btnMover = document.createElement('button');
+    btnMover.type = 'button';
+    btnMover.className = 'btn-opcao';
+    btnMover.textContent = `🦶 Mover (${jogador.movimentoRestante} quadrados restantes)`;
+    btnMover.addEventListener('click', () => this.motorCombate.selecionarAcao('mover'));
+    opcoesEl.appendChild(btnMover);
+
+    // Botão Ataque Básico
+    const btnAtacar = document.createElement('button');
+    btnAtacar.type = 'button';
+    btnAtacar.className = 'btn-opcao';
+    btnAtacar.textContent = `👊 Ataque Básico (Alcance: 1 quad.)`;
+    btnAtacar.addEventListener('click', () => this.motorCombate.selecionarAcao('atacar'));
+    opcoesEl.appendChild(btnAtacar);
+
+    // Botão Akuma no Mi (se possuir)
+    if (jogador.akumaNoMi) {
+      const fruta = jogador.akumaNoMi;
+      const btnFruta = document.createElement('button');
+      btnFruta.type = 'button';
+      btnFruta.className = 'btn-opcao';
+      btnFruta.textContent = `🍎 ${fruta.nome} (Custo: ${fruta.custo_energia} EN | Empurrão: ${fruta.empurrao})`;
+      btnFruta.addEventListener('click', () => this.motorCombate.selecionarAcao('poder', fruta));
+      opcoesEl.appendChild(btnFruta);
+    }
+
+    // Botões de Haki
+    jogador.haki.forEach(haki => {
+      const btnHaki = document.createElement('button');
+      btnHaki.type = 'button';
+      btnHaki.className = 'btn-opcao';
+      btnHaki.textContent = `✨ ${haki.nome} (Custo: ${haki.custo_energia} EN)`;
+      btnHaki.addEventListener('click', () => this.motorCombate.selecionarAcao('poder', haki));
+      opcoesEl.appendChild(btnHaki);
+    });
+
+    // Habilidades Ativas de Raça/Classe
+    jogador.habilidades.filter(h => h.tipo === 'ativa').forEach(hab => {
+      const btnHab = document.createElement('button');
+      btnHab.type = 'button';
+      btnHab.className = 'btn-opcao';
+      btnHab.textContent = `⚡ ${hab.nome} (Custo: ${hab.custo_energia} EN)`;
+      btnHab.addEventListener('click', () =>
+        this.motorCombate.selecionarAcao('poder', {
+          ...hab,
+          dano_base: 14,
+          empurrao: hab.id === 'forca_bruta' || hab.id === 'dial_impacto' ? 2 : 0,
+          efeito_visual: 'particulas_area',
+          paleta_cores: ['#38bdf8', '#facc15']
+        })
+      );
+      opcoesEl.appendChild(btnHab);
+    });
+
+    // Encerrar Turno
+    const btnPassar = document.createElement('button');
+    btnPassar.type = 'button';
+    btnPassar.className = 'btn-primario';
+    btnPassar.style.marginTop = '0.4rem';
+    btnPassar.textContent = '⏭️ Encerrar Turno';
+    btnPassar.addEventListener('click', async () => {
+      await this.motorCombate.encerrarTurnoJogador();
+      if (estadoJogo.faseAtual === 'combate') {
+        this.montarPainelAcoesCombate('🔵 Seu Turno', 'Escolha sua próxima jogada tática no grid 10x10.');
+      }
+    });
+    opcoesEl.appendChild(btnPassar);
+  }
+
+  atualizarHudCombate() {
+    const u = this.motorCombate?.obterJogador();
+    if (!u) return;
+    document.getElementById('hud-hp').textContent = `${u.hpAtual}/${u.hpMax}`;
+    document.getElementById('hud-energia').textContent = `${u.energiaAtual}/${u.energiaMax}`;
+  }
+
+  finalizarBatalha(vitoria) {
+    document.querySelector('.controles-direcionais').classList.remove('oculto');
+    if (vitoria) {
+      this.registrarLog('🏆 VITÓRIA! Você ganhou +80 XP e +฿ 1.500!');
+      if (estadoJogo.faseAnterior === 'oceano') {
+        this.entrarModoOceano();
+      } else {
+        this.entrarModoIlha(estadoJogo.mapaAtual?.nome);
+      }
+    } else {
+      alert('Você foi derrotado em batalha! A tripulação recuou para se recuperar na Ilha de Origem.');
+      estadoJogo.jogador.hpAtual = estadoJogo.jogador.hpMax;
+      estadoJogo.jogador.energiaAtual = estadoJogo.jogador.energiaMax;
+      this.entrarModoIlha(null);
+    }
   }
 
   entrarModoIlha(nomeIlhaCustom) {
@@ -433,17 +567,36 @@ class ControladorMundo {
         <span><i style="background:#3b82f6"></i> Marinha</span>
         <span><i style="background:#38bdf8"></i> Porto</span>
       `;
-    } else {
+    } else if (modo === 'oceano') {
       legenda.innerHTML = `
         <span><i style="background:#16a34a"></i> Ilha</span>
         <span><i style="background:#d97706"></i> Destroços</span>
         <span><i style="background:#e0f2fe"></i> Correnteza</span>
         <span><i style="background:#ef4444"></i> Navio Hostil</span>
       `;
+    } else {
+      legenda.innerHTML = `
+        <span><i style="background:#1d4ed8"></i> Água (Fatal p/ Akuma)</span>
+        <span><i style="background:#78350f"></i> Obstáculo</span>
+        <span><i style="background:#38bdf8"></i> Alcance Mover</span>
+        <span><i style="background:#ef4444"></i> Alcance Ataque</span>
+      `;
     }
   }
 
-  registrarControles() {
+  registrarControles(canvas) {
+    // Clique no grid durante o Combate Tático 10x10 (48px por quadrado)
+    canvas.addEventListener('click', (e) => {
+      if (estadoJogo.faseAtual !== 'combate') return;
+      const rect = canvas.getBoundingClientRect();
+      const escalaX = canvas.width / rect.width;
+      const escalaY = canvas.height / rect.height;
+      const gx = Math.floor(((e.clientX - rect.left) * escalaX) / 48);
+      const gy = Math.floor(((e.clientY - rect.top) * escalaY) / 48);
+
+      this.motorCombate.lidarCliqueGrid(gx, gy);
+    });
+
     window.addEventListener('keydown', (e) => {
       if (estadoJogo.faseAtual !== 'ilha' && estadoJogo.faseAtual !== 'oceano') return;
       const mapaTeclas = {
@@ -502,7 +655,6 @@ class ControladorMundo {
       estadoJogo.posicaoNavio = { x: novoX, y: novoY };
       document.getElementById('coordenadas-jogador').textContent = `Navio: (${novoX}, ${novoY})`;
 
-      // Consumo de suprimentos por deslocamento marítimo
       const jogador = estadoJogo.jogador;
       if (jogador.suprimentos > 0) {
         jogador.suprimentos = Math.max(0, jogador.suprimentos - 2);
@@ -545,8 +697,10 @@ class ControladorMundo {
       btn.addEventListener('click', () => {
         const resultado = opcao.acao();
         this.registrarLog(resultado);
-        textoEl.textContent = resultado;
-        this.atualizarHud();
+        if (estadoJogo.faseAtual !== 'combate') {
+          textoEl.textContent = resultado;
+          this.atualizarHud();
+        }
       });
       opcoesEl.appendChild(btn);
     });
