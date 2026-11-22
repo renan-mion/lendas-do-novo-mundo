@@ -12,8 +12,15 @@
       <span class="icone-ancora">⚓</span>
       <h1>LENDAS DO NOVO MUNDO</h1>
     </div>
-    <div id="barra-status-topo" class="barra-status-topo">
-      <span>Fase Atual: Criação de Personagem</span>
+    <div class="controles-topo">
+      <div id="barra-status-topo" class="barra-status-topo">
+        <span>Fase Atual: Criação de Personagem</span>
+      </div>
+      <div id="botoes-sistema" class="botoes-sistema oculto">
+        <button type="button" id="btn-ver-ficha" class="btn-topo">📋 Ficha</button>
+        <button type="button" id="btn-salvar-jogo" class="btn-topo">💾 Salvar</button>
+        <button type="button" id="btn-carregar-jogo" class="btn-topo">📂 Carregar</button>
+      </div>
     </div>
   </header>
 
@@ -45,7 +52,12 @@
       </aside>
 
       <div class="painel-narrativo">
-        <h2>Forje Sua Lenda nos Mares</h2>
+        <div class="cabecalho-criacao">
+          <h2>Forje Sua Lenda nos Mares</h2>
+          <button type="button" id="btn-continuar-save" class="btn-secundario oculto">
+            📂 Continuar Aventura Salva
+          </button>
+        </div>
 
         <div class="grupo-grid-2">
           <div class="campo-form">
@@ -128,7 +140,6 @@
 
     <!-- TELA 2: EXPLORAÇÃO E COMBATE -->
     <section id="tela-jogo" class="oculto layout-jogo">
-      <!-- Esquerda: Canvas do Mapa / Grid Tático -->
       <div class="painel-mapa">
         <div class="cabecalho-mapa">
           <h2 id="titulo-local">Ilha de Origem</h2>
@@ -159,7 +170,6 @@
         </div>
       </div>
 
-      <!-- Direita: Ficha Rápida + Narração e Escolhas -->
       <aside class="painel-direito-jogo">
         <div class="cartao-resumo" id="hud-jogador">
           <div class="hud-linha-topo">
