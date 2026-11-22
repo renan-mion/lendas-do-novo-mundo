@@ -1,13 +1,4 @@
-import { TIPOS_TILE } from './gerador_mapas.js';
-
-const NOMES_ILHAS_ALEATORIAS = [
-  'Ilha Orange (East Blue)',
-  'Arquipélago Gecko',
-  'Restaurante Baratie',
-  'Ilha Loguetown',
-  'Ilha Conomi',
-  'Ilha Drum (Paraíso)'
-];
+import { TIPOS_TILE, PALETAS_BIOMA } from './gerador_mapas.js';
 
 export class MotorNarrativo {
   constructor(estadoJogo, callbacks) {
@@ -17,13 +8,15 @@ export class MotorNarrativo {
 
   gerarEventoLocal(tipoTile) {
     const jogador = this.estadoJogo.jogador;
+    const mapaAtual = this.estadoJogo.mapaAtual;
     const ehPirata = jogador.faccao === 'pirata';
+    const nomeBioma = PALETAS_BIOMA[mapaAtual?.bioma]?.nome || 'Tropical';
 
     switch (tipoTile) {
       case TIPOS_TILE.TAVERNA:
         return {
-          titulo: '🍺 Taverna do Barril Quebrado',
-          texto: 'O cheiro de carne assada e rum preenche o salão. Marinheiros e piratas disfarçados trocam rumores sobre tesouros na Grand Line.',
+          titulo: `🍺 Taverna de ${mapaAtual.nome}`,
+          texto: `Ambiente acolhedor neste clima de ${nomeBioma}. Viajantes comentam sobre as rotas para a Grand Line e os tesouros escondidos nas ilhas vizinhas.`,
           opcoes: [
             {
               texto: 'Descansar e comer carne (Recupera todo HP e Energia - ฿ 500)',
@@ -34,14 +27,14 @@ export class MotorNarrativo {
                 jogador.berries -= 500;
                 jogador.hpAtual = jogador.hpMax;
                 jogador.energiaAtual = jogador.energiaMax;
-                return 'Você devorou um banquete! HP e Energia totalmente restaurados.';
+                return 'Banquete completo! HP e Energia totalmente restaurados.';
               }
             },
             {
-              texto: 'Ouvir rumores no balcão (+25 XP)',
+              texto: 'Ouvir rumores de navegação (+30 XP)',
               acao: () => {
-                jogador.xp += 25;
-                return 'O taverneiro comenta: "Navios piratas e patrulhas da Marinha estão disputando suprimentos logo ao sul do Porto!"';
+                jogador.xp += 30;
+                return 'Um velho navegador alerta: "Para entrar na Grand Line, rume para o centro do mapa até a Reverse Mountain! Evite o Calm Belt!"';
               }
             }
           ]
@@ -49,25 +42,25 @@ export class MotorNarrativo {
 
       case TIPOS_TILE.DOJO:
         return {
-          titulo: '🥋 Dojo Estilo Espada & Punho',
-          texto: 'Discípulos treinam golpes no ar sob o olhar rigoroso do mestre do Dojo. Os bonecos de madeira estão marcados por cortes profundos.',
+          titulo: `🥋 Dojo de ${mapaAtual.nome}`,
+          texto: `Mestres locais adaptaram suas técnicas ao ambiente de ${nomeBioma}.`,
           opcoes: [
             {
-              texto: 'Treinar arduamente (+40 XP, consome 15 de Energia)',
+              texto: 'Treinar arduamente (+45 XP, consome 15 de Energia)',
               acao: () => {
                 if (jogador.energiaAtual < 15) {
-                  return 'Você está exausto demais para treinar agora. Descanse na Taverna.';
+                  return 'Energia insuficiente para treinar agora. Descanse na Taverna.';
                 }
                 jogador.energiaAtual -= 15;
-                jogador.xp += 40;
-                return 'Seu domínio técnico ficou mais afiado após o treino intenso! (+40 XP)';
+                jogador.xp += 45;
+                return 'Treino concluído com sucesso! (+45 XP)';
               }
             },
             {
               texto: 'Meditar para focar o espírito (Recupera 20 de Energia)',
               acao: () => {
                 jogador.energiaAtual = Math.min(jogador.energiaMax, jogador.energiaAtual + 20);
-                return 'Sua mente se acalma e sua energia espiritual se recupera.';
+                return 'Sua energia espiritual foi restaurada em +20.';
               }
             }
           ]
@@ -75,37 +68,37 @@ export class MotorNarrativo {
 
       case TIPOS_TILE.BASE_MARINHA:
         return {
-          titulo: '🏛️ Base Avançada da Marinha',
+          titulo: `🏛️ Guarnição da Marinha — ${mapaAtual.nome}`,
           texto: ehPirata
-            ? 'Guardas da Marinha patrulham o portão com rifles prontos. Entrar aqui como Pirata é pedir por encrenca!'
-            : 'Os recrutas prestam continência assim que reconhecem seu uniforme oficial da Marinha.',
+            ? 'Os portões estão fortemente vigiados por soldados da Marinha com cartazes de procurado!'
+            : 'Os oficiais saúdam sua chegada e oferecem apoio logístico da Marinha.',
           opcoes: ehPirata
             ? [
                 {
-                  texto: '⚔️ Invadir o pátio e enfrentar os Marinheiros!',
+                  texto: '⚔️ Invadir a base e enfrentar a guarnição!',
                   acao: () => {
                     this.callbacks.iniciarCombate('patrulha_marinha');
-                    return 'Alarme disparado! Capitão da Marinha e soldados bloqueiam sua saída!';
+                    return 'Alarme acionado! Soldados cercam o pátio!';
                   }
                 },
                 {
                   texto: 'Recuar discretamente',
-                  acao: () => 'Você se afasta antes que os guardas percebam sua recompensa.'
+                  acao: () => 'Você se afasta sem chamar atenção.'
                 }
               ]
             : [
                 {
-                  texto: 'Reabastecer suprimentos oficiais (+30 Suprimentos)',
+                  texto: 'Reabastecer suprimentos oficiais (+35 Suprimentos)',
                   acao: () => {
-                    jogador.suprimentos = Math.min(100, jogador.suprimentos + 30);
-                    return 'O intendente carregou caixas de suprimentos para sua embarcação.';
+                    jogador.suprimentos = Math.min(100, jogador.suprimentos + 35);
+                    return 'Suprimentos militares carregados no seu navio!';
                   }
                 },
                 {
-                  texto: '⚔️ Aceitar missão de captura contra piratas invasores!',
+                  texto: '⚔️ Patrulhar a costa contra piratas invasores!',
                   acao: () => {
                     this.callbacks.iniciarCombate('bando_pirata');
-                    return 'Você parte imediatamente para interceptar os piratas na costa!';
+                    return 'Você interceptou um bando pirata tentando saquear a costa!';
                   }
                 }
               ]
@@ -113,25 +106,25 @@ export class MotorNarrativo {
 
       case TIPOS_TILE.PORTO:
         return {
-          titulo: '⛵ Porto da Ilha',
-          texto: 'As ondas batem contra o píer de madeira. Seu barco está ancorado e pronto para ganhar o mar aberto.',
+          titulo: `⛵ Porto de ${mapaAtual.nome}`,
+          texto: 'Seu navio aguarda atracado no cais, pronto para navegar pelo mapa-múndi.',
           opcoes: [
             {
               texto: 'Comprar suprimentos de viagem (+40 Suprimentos - ฿ 800)',
               acao: () => {
                 if (jogador.berries < 800) {
-                  return 'Berries insuficientes para comprar suprimentos (precisa de ฿ 800).';
+                  return 'Berries insuficientes (precisa de ฿ 800).';
                 }
                 jogador.berries -= 800;
                 jogador.suprimentos = Math.min(100, jogador.suprimentos + 40);
-                return 'Suprimentos carregados no porão do navio!';
+                return 'Porão reabastecido com +40 Suprimentos!';
               }
             },
             {
-              texto: '🧭 Zarpar para o Oceano (Overworld Marítimo)',
+              texto: '🧭 Zarpar para o Mapa-Múndi Oceânico',
               acao: () => {
                 this.callbacks.zarparOceano();
-                return 'Âncoras recolhidas! Você partiu para o mar aberto.';
+                return 'Velas içadas! Você retornou ao oceano.';
               }
             }
           ]
@@ -144,32 +137,88 @@ export class MotorNarrativo {
 
   gerarEventoMaritimo(tipoTile, posX, posY) {
     const jogador = this.estadoJogo.jogador;
+    const mapaOceano = this.estadoJogo.mapaOceano;
 
+    // 1. Ilha Oficial Mapeada
     if (tipoTile === TIPOS_TILE.ILHA_OCEANO) {
-      const nomeIlha = NOMES_ILHAS_ALEATORIAS[(posX + posY) % NOMES_ILHAS_ALEATORIAS.length];
+      const ilhaConfig = mapaOceano.ilhasPorCoord[`${posX},${posY}`];
+      const nomeIlha = ilhaConfig ? ilhaConfig.nome : 'Ilha Desconhecida';
+      const nomeBioma = PALETAS_BIOMA[ilhaConfig?.bioma || 'tropical'].nome;
+
       return {
         titulo: `🏝️ Terra à Vista: ${nomeIlha}`,
-        texto: 'Seu vigia avistou um porto seguro e edifícios movimentados na costa desta ilha.',
+        texto: `Bioma: ${nomeBioma} | Nível Recomendado: ${ilhaConfig?.nivel_recomendado || 1}. O porto está visível à frente.`,
         opcoes: [
           {
-            texto: '⚓ Ancorar e desembarcar na ilha',
+            texto: `⚓ Ancorar e explorar ${nomeIlha}`,
             acao: () => {
-              this.callbacks.atracarIlha(nomeIlha);
+              this.callbacks.atracarIlha(ilhaConfig);
               return `Você desembarcou em ${nomeIlha}.`;
             }
           },
           {
-            texto: 'Continuar navegando pelo oceano',
-            acao: () => 'Você mantém o leme firme e segue viagem pelos mares.'
+            texto: 'Continuar navegando',
+            acao: () => 'Você segue rumo ao horizonte.'
           }
         ]
       };
     }
 
+    // 2. Travessia da Reverse Mountain para a Grand Line (Paradise)
+    if (tipoTile === TIPOS_TILE.REVERSE_MOUNTAIN) {
+      const jaNaGrandLine = posX >= 22 && posY >= 11 && posY <= 13;
+      return {
+        titulo: '⛰️ Reverse Mountain — A Correnteza Ascendente!',
+        texto: jaNaGrandLine
+          ? 'Você está nos Cabos Gêmeos, na entrada da Grand Line (Paraíso)! O Log Pose aponta para frente.'
+          : 'As águas dos quatro mares convergem e sobem a montanha vermelha em direção à lendária Grand Line!',
+        opcoes: [
+          {
+            texto: '🌊 Escalar a Reverse Mountain e entrar na Grand Line (Requer Nível 2 ou ฿ 2.000)',
+            acao: () => {
+              if (jogador.nivel < 2 && jogador.berries < 2000) {
+                return 'Sua embarcação e experiência ainda são frágeis demais! Alcance o Nível 2 ou junte ฿ 2.000 para reforçar o casco.';
+              }
+              if (jogador.nivel < 2) {
+                jogador.berries -= 2000;
+              }
+              this.callbacks.atravessarReverseMountain();
+              return '🎉 INCRÍVEL! Você subiu a Reverse Mountain e chegou aos Cabos Gêmeos, na entrada da GRAND LINE!';
+            }
+          }
+        ]
+      };
+    }
+
+    // 3. Calm Belt (Sem vento + Reis dos Mares)
+    if (tipoTile === TIPOS_TILE.CALM_BELT) {
+      return {
+        titulo: '🐉 Calm Belt — Ninho de Reis dos Mares!',
+        texto: 'Não há vento algum nas velas e sombras colossais emergem das profundezas!',
+        opcoes: [
+          {
+            texto: '⚔️ Enfrentar a emboscada marítima!',
+            acao: () => {
+              this.callbacks.iniciarCombate('abordagem_naval');
+              return 'Monstros e piratas aproveitam a calmaria para atacar seu navio!';
+            }
+          },
+          {
+            texto: 'Remar com toda força para fora (-20 Suprimentos)',
+            acao: () => {
+              jogador.suprimentos = Math.max(0, jogador.suprimentos - 20);
+              return 'Você escapou do Calm Belt exausto (-20 Suprimentos). Use a Reverse Mountain para entrar na Grand Line com segurança!';
+            }
+          }
+        ]
+      };
+    }
+
+    // 4. Destroços
     if (tipoTile === TIPOS_TILE.NAUFRAGIO) {
       return {
         titulo: '📦 Destroços Flutuantes',
-        texto: 'Barris lacrados e caixas de madeira boiam entre restos de uma antiga embarcação mercante.',
+        texto: 'Barris lacrados e caixas de madeira boiam entre restos de uma antiga embarcação.',
         opcoes: [
           {
             texto: 'Içar a carga a bordo (+20 Suprimentos e +฿ 1.200)',
@@ -184,10 +233,11 @@ export class MotorNarrativo {
       };
     }
 
+    // 5. Redemoinho
     if (tipoTile === TIPOS_TILE.REDEMOINHO) {
       return {
-        titulo: '🌀 Redemoinho e Tempestade Súbita!',
-        texto: 'O clima muda em segundos! Ondas gigantes atingem o casco enquanto correntes tentam puxar o navio.',
+        titulo: '🌀 Redemoinho Súbito!',
+        texto: 'Correntes marítimas violentas tentam girar o casco do navio.',
         opcoes: [
           {
             texto: 'Forçar o leme contra a corrente (-15 Suprimentos, +35 XP)',
@@ -195,75 +245,41 @@ export class MotorNarrativo {
               jogador.suprimentos = Math.max(0, jogador.suprimentos - 15);
               jogador.xp += 35;
               this.callbacks.limparTileOceano(posX, posY);
-              return 'Com manobras arriscadas, você escapou do redemoinho! (-15 Suprimentos, +35 XP)';
+              return 'Você superou a correnteza! (-15 Suprimentos, +35 XP)';
             }
           }
         ]
       };
     }
 
+    // 6. Navio Inimigo
     if (tipoTile === TIPOS_TILE.NAVIO_INIMIGO) {
       const inimigo = jogador.faccao === 'pirata' ? 'Fragata da Marinha' : 'Galeão Pirata';
       return {
         titulo: `🏴‍☠️ Abordagem Naval: ${inimigo}!`,
-        texto: `Um ${inimigo} dispara tiros de advertência e lança ganchos de abordagem contra o seu convés!`,
+        texto: `Um ${inimigo} dispara canhões de advertência e lança ganchos contra seu convés!`,
         opcoes: [
           {
-            texto: '⚔️ Preparar para o combate no convés!',
+            texto: '⚔️ Defender o convés em combate!',
             acao: () => {
               this.callbacks.limparTileOceano(posX, posY);
               this.callbacks.iniciarCombate('abordagem_naval');
-              return `Os ganchos prenderam os navios! O combate no convés vai começar!`;
+              return 'O combate no convés começou!';
             }
           },
           {
-            texto: 'Tentar manobra evasiva (-10 Suprimentos)',
+            texto: 'Manobra evasiva (-10 Suprimentos)',
             acao: () => {
               if (jogador.suprimentos < 10) {
                 this.callbacks.iniciarCombate('abordagem_naval');
-                return 'Sem suprimentos para manobrar rápido, você foi alcançado e abordado!';
+                return 'Sem suprimentos para manobrar, você foi abordado!';
               }
               jogador.suprimentos -= 10;
-              return 'Você escapou por pouco aproveitando o vento a favor! (-10 Suprimentos)';
+              return 'Você escapou aproveitando os ventos! (-10 Suprimentos)';
             }
           }
         ]
       };
-    }
-
-    // Evento aleatório em mar aberto (20% de chance)
-    if (tipoTile === TIPOS_TILE.MAR_ABERTO && Math.random() < 0.2) {
-      const eventosAleatorios = [
-        {
-          titulo: '🐟 Cardume de Peixes Gigantes',
-          texto: 'Um cardume de peixes saborosos acompanha o casco do navio.',
-          opcoes: [
-            {
-              texto: 'Pescar para o estoque (+15 Suprimentos)',
-              acao: () => {
-                jogador.suprimentos = Math.min(100, jogador.suprimentos + 15);
-                return 'Pescaria farta! O estoque de suprimentos subiu em +15%.';
-              }
-            }
-          ]
-        },
-        {
-          titulo: '🕊️ Gaivota Carteira do Jornal Mundial',
-          texto: 'Uma gaivota pousa na amurada oferecendo a edição do dia com notícias dos mares.',
-          opcoes: [
-            {
-              texto: 'Comprar jornal por ฿ 100 (+20 XP)',
-              acao: () => {
-                if (jogador.berries < 100) return 'Você não tem ฿ 100 trocados para a gaivota.';
-                jogador.berries -= 100;
-                jogador.xp += 20;
-                return 'Você leu sobre os movimentos dos Yonkou e aprendeu novas rotas (+20 XP).';
-              }
-            }
-          ]
-        }
-      ];
-      return eventosAleatorios[Math.floor(Math.random() * eventosAleatorios.length)];
     }
 
     return null;
