@@ -6,65 +6,102 @@ export class MotorNarrativo {
     this.callbacks = callbacks;
   }
 
+  jaConcluiuAtividade(ilhaId, chaveAtividade) {
+    if (!this.estadoJogo.atividadesConcluidas) {
+      this.estadoJogo.atividadesConcluidas = {};
+    }
+    return Boolean(this.estadoJogo.atividadesConcluidas[`${ilhaId}:${chaveAtividade}`]);
+  }
+
+  marcarAtividadeConcluida(ilhaId, chaveAtividade) {
+    if (!this.estadoJogo.atividadesConcluidas) {
+      this.estadoJogo.atividadesConcluidas = {};
+    }
+    this.estadoJogo.atividadesConcluidas[`${ilhaId}:${chaveAtividade}`] = true;
+  }
+
   gerarEventoLocal(tipoTile) {
     const jogador = this.estadoJogo.jogador;
     const mapaAtual = this.estadoJogo.mapaAtual;
+    const ilhaId = mapaAtual?.id || 'ilha_origem';
     const ehPirata = jogador.faccao === 'pirata';
     const nomeBioma = PALETAS_BIOMA[mapaAtual?.bioma]?.nome || 'Tropical';
 
     switch (tipoTile) {
-      case TIPOS_TILE.TAVERNA:
+      case TIPOS_TILE.TAVERNA: {
+        const ouviuRumores = this.jaConcluiuAtividade(ilhaId, 'taverna_rumores');
+        const opcoes = [
+          {
+            texto: 'Descansar e comer carne (Recupera todo HP e Energia - ฿ 500)',
+            acao: () => {
+              if (jogador.berries < 500) {
+                return 'Você não tem Berries suficientes (precisa de ฿ 500).';
+              }
+              jogador.berries -= 500;
+              jogador.hpAtual = jogador.hpMax;
+              jogador.energiaAtual = jogador.energiaMax;
+              return 'Banquete completo! HP e Energia totalmente restaurados.';
+            }
+          }
+        ];
+
+        if (!ouviuRumores) {
+          opcoes.push({
+            texto: 'Ouvir rumores de navegação (+30 XP • Único nesta ilha)',
+            unica: true,
+            acao: () => {
+              this.marcarAtividadeConcluida(ilhaId, 'taverna_rumores');
+              jogador.xp += 30;
+              return 'Um velho navegador alerta: "Para entrar na Grand Line, rume para o centro do mapa até a Reverse Mountain! Evite o Calm Belt!" (+30 XP)';
+            }
+          });
+        }
+
         return {
           titulo: `🍺 Taverna de ${mapaAtual.nome}`,
-          texto: `Ambiente acolhedor neste clima de ${nomeBioma}. Viajantes comentam sobre as rotas para a Grand Line e os tesouros escondidos nas ilhas vizinhas.`,
-          opcoes: [
-            {
-              texto: 'Descansar e comer carne (Recupera todo HP e Energia - ฿ 500)',
-              acao: () => {
-                if (jogador.berries < 500) {
-                  return 'Você não tem Berries suficientes (precisa de ฿ 500).';
-                }
-                jogador.berries -= 500;
-                jogador.hpAtual = jogador.hpMax;
-                jogador.energiaAtual = jogador.energiaMax;
-                return 'Banquete completo! HP e Energia totalmente restaurados.';
-              }
-            },
-            {
-              texto: 'Ouvir rumores de navegação (+30 XP)',
-              acao: () => {
-                jogador.xp += 30;
-                return 'Um velho navegador alerta: "Para entrar na Grand Line, rume para o centro do mapa até a Reverse Mountain! Evite o Calm Belt!"';
-              }
-            }
-          ]
+          texto: ouviuRumores
+            ? `Você já ouviu todos os rumores locais de ${mapaAtual.nome}. O salão segue movimentado para descansar e comer.`
+            : `Ambiente acolhedor neste clima de ${nomeBioma}. Viajantes comentam sobre as rotas para a Grand Line e tesouros escondidos.`,
+          opcoes
         };
+      }
 
-      case TIPOS_TILE.DOJO:
+      case TIPOS_TILE.DOJO: {
+        const treinouDojo = this.jaConcluiuAtividade(ilhaId, 'dojo_treino');
+        const opcoes = [];
+
+        if (!treinouDojo) {
+          opcoes.push({
+            texto: 'Treinar arduamente (+45 XP, consome 15 de Energia • Único nesta ilha)',
+            unica: true,
+            acao: () => {
+              if (jogador.energiaAtual < 15) {
+                return 'Energia insuficiente para treinar agora. Descanse na Taverna.';
+              }
+              this.marcarAtividadeConcluida(ilhaId, 'dojo_treino');
+              jogador.energiaAtual -= 15;
+              jogador.xp += 45;
+              return 'Treino concluído com sucesso! Você absorveu tudo o que o mestre desta ilha tinha a ensinar. (+45 XP)';
+            }
+          });
+        }
+
+        opcoes.push({
+          texto: 'Meditar para focar o espírito (Recupera 20 de Energia)',
+          acao: () => {
+            jogador.energiaAtual = Math.min(jogador.energiaMax, jogador.energiaAtual + 20);
+            return 'Sua energia espiritual foi restaurada em +20.';
+          }
+        });
+
         return {
           titulo: `🥋 Dojo de ${mapaAtual.nome}`,
-          texto: `Mestres locais adaptaram suas técnicas ao ambiente de ${nomeBioma}.`,
-          opcoes: [
-            {
-              texto: 'Treinar arduamente (+45 XP, consome 15 de Energia)',
-              acao: () => {
-                if (jogador.energiaAtual < 15) {
-                  return 'Energia insuficiente para treinar agora. Descanse na Taverna.';
-                }
-                jogador.energiaAtual -= 15;
-                jogador.xp += 45;
-                return 'Treino concluído com sucesso! (+45 XP)';
-              }
-            },
-            {
-              texto: 'Meditar para focar o espírito (Recupera 20 de Energia)',
-              acao: () => {
-                jogador.energiaAtual = Math.min(jogador.energiaMax, jogador.energiaAtual + 20);
-                return 'Sua energia espiritual foi restaurada em +20.';
-              }
-            }
-          ]
+          texto: treinouDojo
+            ? `Você já concluiu o treinamento intensivo deste Dojo. O tatame está livre para meditação.`
+            : `Mestres locais adaptaram suas técnicas ao ambiente de ${nomeBioma}.`,
+          opcoes
         };
+      }
 
       case TIPOS_TILE.BASE_MARINHA:
         return {
@@ -123,6 +160,9 @@ export class MotorNarrativo {
             {
               texto: '🧭 Zarpar para o Mapa-Múndi Oceânico',
               acao: () => {
+                if (jogador.suprimentos <= 0) {
+                  return '⚠️ Você está sem suprimentos! Compre provisões no porto antes de zarpar para não ficar à deriva.';
+                }
                 this.callbacks.zarparOceano();
                 return 'Velas içadas! Você retornou ao oceano.';
               }
@@ -135,11 +175,42 @@ export class MotorNarrativo {
     }
   }
 
+  gerarEventoSemSuprimentos() {
+    const jogador = this.estadoJogo.jogador;
+    return {
+      titulo: '🚨 Navio à Deriva — Suprimentos Esgotados!',
+      texto:
+        'A despensa está completamente vazia! Sem comida ou água potável, a tripulação sofre com a inanição (regra de Starvation) e não tem forças para manobrar as velas.',
+      opcoes: [
+        {
+          texto: '🎣 Tentar pescar em alto-mar (+15 Suprimentos, custa 10 de Energia)',
+          acao: () => {
+            if (jogador.energiaAtual < 10) {
+              return 'Você está sem energia até para pescar! Peça reboque de emergência para o porto.';
+            }
+            jogador.energiaAtual -= 10;
+            jogador.suprimentos = 15;
+            return 'Você fisgou um Rei dos Mares jovem! (+15 Suprimentos). Já pode navegar até a ilha mais próxima!';
+          }
+        },
+        {
+          texto: '🆘 Sinalizador de Socorro: Reboque até o porto mais próximo (-50% HP e -฿ 1.000)',
+          acao: () => {
+            jogador.hpAtual = Math.max(1, Math.floor(jogador.hpAtual * 0.5));
+            jogador.berries = Math.max(0, jogador.berries - 1000);
+            jogador.suprimentos = 25;
+            this.callbacks.rebocarParaPortoSeguro();
+            return 'Um navio mercante rebocou sua embarcação exausta até o porto mais próximo!';
+          }
+        }
+      ]
+    };
+  }
+
   gerarEventoMaritimo(tipoTile, posX, posY) {
     const jogador = this.estadoJogo.jogador;
     const mapaOceano = this.estadoJogo.mapaOceano;
 
-    // 1. Ilha Oficial Mapeada
     if (tipoTile === TIPOS_TILE.ILHA_OCEANO) {
       const ilhaConfig = mapaOceano.ilhasPorCoord[`${posX},${posY}`];
       const nomeIlha = ilhaConfig ? ilhaConfig.nome : 'Ilha Desconhecida';
@@ -164,7 +235,6 @@ export class MotorNarrativo {
       };
     }
 
-    // 2. Travessia da Reverse Mountain para a Grand Line (Paradise)
     if (tipoTile === TIPOS_TILE.REVERSE_MOUNTAIN) {
       const jaNaGrandLine = posX >= 22 && posY >= 11 && posY <= 13;
       return {
@@ -190,7 +260,6 @@ export class MotorNarrativo {
       };
     }
 
-    // 3. Calm Belt (Sem vento + Reis dos Mares)
     if (tipoTile === TIPOS_TILE.CALM_BELT) {
       return {
         titulo: '🐉 Calm Belt — Ninho de Reis dos Mares!',
@@ -214,7 +283,6 @@ export class MotorNarrativo {
       };
     }
 
-    // 4. Destroços
     if (tipoTile === TIPOS_TILE.NAUFRAGIO) {
       return {
         titulo: '📦 Destroços Flutuantes',
@@ -233,7 +301,6 @@ export class MotorNarrativo {
       };
     }
 
-    // 5. Redemoinho
     if (tipoTile === TIPOS_TILE.REDEMOINHO) {
       return {
         titulo: '🌀 Redemoinho Súbito!',
@@ -252,7 +319,6 @@ export class MotorNarrativo {
       };
     }
 
-    // 6. Navio Inimigo
     if (tipoTile === TIPOS_TILE.NAVIO_INIMIGO) {
       const inimigo = jogador.faccao === 'pirata' ? 'Fragata da Marinha' : 'Galeão Pirata';
       return {
