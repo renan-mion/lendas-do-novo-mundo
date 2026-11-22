@@ -1,0 +1,88 @@
+{
+  "tamanho_grade": 16,
+  "escala_pixel": 2,
+  "matriz_humanoide": [
+    "................",
+    ".....CCCCCC.....",
+    "....CCCCCCCC....",
+    "....CCPPPPCC....",
+    "....CPEPPPEC....",
+    "....CPPPPPPC....",
+    ".....PPPPPP.....",
+    "...RRRRRRRRRR...",
+    "..PRRRRRRRRRRP..",
+    "..PRRRRRRRRRRP..",
+    "..P.RRRRRRRR.P..",
+    "....BBBBBBBB....",
+    "....BBB..BBB....",
+    "....BBB..BBB....",
+    "...SSS....SSS...",
+    "................"
+  ],
+  "acessorios": {
+    "chapeu_pirata": [
+      "................",
+      "....YYYYYYYY....",
+      "..YYYYRRRRYYYY..",
+      "................"
+    ],
+    "bone_marinha": [
+      "................",
+      "....WWWWWWWW....",
+      "...WWWWBBWWWW...",
+      "................"
+    ],
+    "bandana": [
+      "................",
+      "................",
+      "....DDDDDDDD....",
+      "................"
+    ]
+  },
+  "detalhes_raciais": {
+    "homem_peixe": [
+      {"x": 7, "y": 0, "cor": "#2980b9"},
+      {"x": 8, "y": 0, "cor": "#2980b9"},
+      {"x": 3, "y": 8, "cor": "#2980b9"},
+      {"x": 12, "y": 8, "cor": "#2980b9"}
+    ],
+    "habitante_do_ceu": [
+      {"x": 2, "y": 6, "cor": "#ffffff"},
+      {"x": 1, "y": 7, "cor": "#ffffff"},
+      {"x": 2, "y": 8, "cor": "#ecf0f1"},
+      {"x": 13, "y": 6, "cor": "#ffffff"},
+      {"x": 14, "y": 7, "cor": "#ffffff"},
+      {"x": 13, "y": 8, "cor": "#ecf0f1"}
+    ],
+    "mink": [
+      {"x": 4, "y": 0, "cor": "#d35400"},
+      {"x": 5, "y": 0, "cor": "#e67e22"},
+      {"x": 10, "y": 0, "cor": "#e67e22"},
+      {"x": 11, "y": 0, "cor": "#d35400"}
+    ],
+    "ciborgue": [
+      {"x": 5, "y": 4, "cor": "#00ffff"},
+      {"x": 6, "y": 4, "cor": "#00ffff"},
+      {"x": 9, "y": 4, "cor": "#00ffff"},
+      {"x": 10, "y": 4, "cor": "#00ffff"}
+    ]
+  },
+  "matriz_zoan": [
+    "....ZZ....ZZ....",
+    "...ZZZZZZZZZZ...",
+    "..ZZZPPPPPPZZZ..",
+    "..ZZPEPPPPPEZZ..",
+    "..ZZPPPPPPPPZZ..",
+    "...ZZZWWWWZZZ...",
+    "..ZZZZZZZZZZZZ..",
+    ".PZZZZZZZZZZZZP.",
+    ".PZZZZZZZZZZZZP.",
+    ".P.ZZZZZZZZZZ.P.",
+    "...ZZZZZZZZZZ...",
+    "...ZZZ....ZZZ...",
+    "..ZZZ......ZZZ..",
+    "..PPP......PPP..",
+    "................",
+    "................"
+  ]
+}
