@@ -32,24 +32,55 @@ class GerenciadorCriacao {
     this.renderizador = null;
   }
 
+  async carregarJson(caminho) {
+    const resposta = await fetch(caminho);
+    if (!resposta.ok) {
+      throw new Error(`Não foi possível carregar "${caminho}" (Erro HTTP ${resposta.status}).`);
+    }
+    return await resposta.json();
+  }
+
   async iniciar() {
-    const [resRacas, resPoderes, resSprites] = await Promise.all([
-      fetch('./dados/racas_classes.json'),
-      fetch('./dados/poderes.json'),
-      fetch('./recursos/config_sprites.json')
-    ]);
+    try {
+      const [dadosRacas, dadosPoderes, configSprites] = await Promise.all([
+        this.carregarJson('./dados/racas_classes.json'),
+        this.carregarJson('./dados/poderes.json'),
+        this.carregarJson('./recursos/config_sprites.json')
+      ]);
 
-    estadoJogo.dadosRacasClasses = await resRacas.json();
-    estadoJogo.dadosPoderes = await resPoderes.json();
-    estadoJogo.configSprites = await resSprites.json();
+      estadoJogo.dadosRacasClasses = dadosRacas;
+      estadoJogo.dadosPoderes = dadosPoderes;
+      estadoJogo.configSprites = configSprites;
 
-    const canvas = document.getElementById('canvas-preview');
-    this.renderizador = new RenderizadorCanvas(canvas, estadoJogo.configSprites);
+      const canvas = document.getElementById('canvas-preview');
+      this.renderizador = new RenderizadorCanvas(canvas, estadoJogo.configSprites);
 
-    this.popularSeletores();
-    this.renderizarGradeAtributos();
-    this.registrarEventos();
-    this.atualizarTudo();
+      this.popularSeletores();
+      this.renderizarGradeAtributos();
+      this.registrarEventos();
+      this.atualizarTudo();
+    } catch (erro) {
+      console.error('Erro ao inicializar Lendas do Novo Mundo:', erro);
+      this.exibirErroNaTela(erro);
+    }
+  }
+
+  exibirErroNaTela(erro) {
+    const painel = document.querySelector('.painel-narrativo');
+    const aviso = document.createElement('div');
+    aviso.style.cssText =
+      'background:#450a0a; border:2px solid #ef4444; color:#fecaca; padding:1rem; border-radius:6px; margin-bottom:1rem; line-height:1.5;';
+
+    const protocoloArquivo = window.location.protocol === 'file:';
+    aviso.innerHTML = protocoloArquivo
+      ? `<strong>⚠️ Jogo aberto diretamente como arquivo local (file://)</strong><br/>
+         Os navegadores bloqueiam o carregamento dos arquivos JSON sem um servidor local.<br/>
+         <strong>Como abrir corretamente:</strong> Use a extensão <em>Live Server</em> no VS Code ou execute <code>python -m http.server 8000</code> na pasta do projeto.`
+      : `<strong>⚠️ Erro ao carregar os dados do jogo:</strong><br/>
+         ${erro.message}<br/>
+         <small>Verifique se as pastas <code>dados/</code>, <code>motor/</code> e <code>recursos/</code> estão com os nomes exatos.</small>`;
+
+    painel.prepend(aviso);
   }
 
   popularSeletores() {
@@ -256,7 +287,6 @@ class GerenciadorCriacao {
     this.renderizador.limpar('#0f172a');
     this.renderizador.desenharGradeFundo(32);
 
-    // Desenha o sprite ampliado 3x (96x96) centralizado no canvas 192x192
     this.renderizador.desenharPersonagem(
       48,
       48,
