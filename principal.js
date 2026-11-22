@@ -25,7 +25,8 @@ export const estadoJogo = {
   mapaAtual: null,
   mapaOceano: null,
   posicaoJogador: { x: 14, y: 14 },
-  posicaoNavio: { x: 37, y: 4 }
+  posicaoNavio: { x: 37, y: 4 },
+  atividadesConcluidas: {}
 };
 
 class GerenciadorCriacao {
@@ -374,6 +375,7 @@ class GerenciadorCriacao {
       }
     };
 
+    estadoJogo.atividadesConcluidas = {};
     this.onConcluir();
   }
 }
@@ -419,10 +421,17 @@ class ControladorMundo {
         this.entrarModoIlha(ilhaConfig);
       },
       atravessarReverseMountain: () => {
-        // Teleporta o navio para os Cabos Gêmeos (entrada de Paradise na Grand Line)
         estadoJogo.posicaoNavio = { x: 23, y: 12 };
         document.getElementById('coordenadas-jogador').textContent = `Navio: (23, 12) • Grand Line`;
         this.renderizar();
+      },
+      rebocarParaPortoSeguro: () => {
+        const mar = estadoJogo.dadosMundo.mares[estadoJogo.jogador.marOrigem || 'east_blue'];
+        const ilhaSegura = estadoJogo.dadosMundo.ilhas.find(i => i.id === mar.ilha_inicial);
+        if (ilhaSegura) {
+          estadoJogo.posicaoNavio = { x: ilhaSegura.x, y: ilhaSegura.y };
+        }
+        this.entrarModoIlha(ilhaSegura);
       },
       limparTileOceano: (x, y) => {
         if (estadoJogo.mapaOceano) {
@@ -464,7 +473,8 @@ class ControladorMundo {
       mapaAtual: estadoJogo.mapaAtual,
       mapaOceano: estadoJogo.mapaOceano,
       posicaoJogador: estadoJogo.posicaoJogador,
-      posicaoNavio: estadoJogo.posicaoNavio
+      posicaoNavio: estadoJogo.posicaoNavio,
+      atividadesConcluidas: estadoJogo.atividadesConcluidas
     };
 
     localStorage.setItem(CHAVE_SAVE, JSON.stringify(dadosSave));
@@ -487,6 +497,7 @@ class ControladorMundo {
     estadoJogo.mapaOceano = dados.mapaOceano;
     estadoJogo.posicaoJogador = dados.posicaoJogador || { x: 14, y: 14 };
     estadoJogo.posicaoNavio = dados.posicaoNavio || { x: 37, y: 4 };
+    estadoJogo.atividadesConcluidas = dados.atividadesConcluidas || {};
 
     this.prepararInterfaceJogo();
 
@@ -822,6 +833,15 @@ class ControladorMundo {
       this.renderizar();
       this.exibirEvento(this.motorNarrativo.gerarEventoLocal(tipoTile), INFO_TILES[tipoTile].nome);
     } else if (estadoJogo.faseAtual === 'oceano') {
+      const jogador = estadoJogo.jogador;
+
+      // Bloqueia navegação se os suprimentos estiverem zerados (Navio à Deriva)
+      if (jogador.suprimentos <= 0) {
+        this.registrarLog('🚨 Navio à deriva! Sem suprimentos para navegar. Resolva a emergência no painel narrativo.');
+        this.exibirEvento(this.motorNarrativo.gerarEventoSemSuprimentos(), 'Navio à Deriva');
+        return;
+      }
+
       const novoX = estadoJogo.posicaoNavio.x + deltas[direcao].dx;
       const novoY = estadoJogo.posicaoNavio.y + deltas[direcao].dy;
       const mapa = estadoJogo.mapaOceano;
@@ -835,20 +855,21 @@ class ControladorMundo {
       }
 
       estadoJogo.posicaoNavio = { x: novoX, y: novoY };
+      jogador.suprimentos = Math.max(0, jogador.suprimentos - 1);
+
       const regiao = this.identificarRegiaoOceano(novoX, novoY);
       document.getElementById('titulo-local').textContent = `Oceano — ${regiao}`;
       document.getElementById('coordenadas-jogador').textContent = `Navio: (${novoX}, ${novoY})`;
 
-      const jogador = estadoJogo.jogador;
-      if (jogador.suprimentos > 0) {
-        jogador.suprimentos = Math.max(0, jogador.suprimentos - 1);
-      } else {
-        jogador.hpAtual = Math.max(1, jogador.hpAtual - 2);
-        this.registrarLog('⚠️ Sem suprimentos! A tripulação está sofrendo de fome (-2 HP).');
-      }
-
       this.atualizarHud();
       this.renderizar();
+
+      // Se acabou de chegar a 0 suprimentos neste movimento, aciona imediatamente o alerta de navio à deriva
+      if (jogador.suprimentos === 0) {
+        this.registrarLog('🚨 Seus suprimentos acabaram completamente! O navio ficou à deriva.');
+        this.exibirEvento(this.motorNarrativo.gerarEventoSemSuprimentos(), 'Navio à Deriva');
+        return;
+      }
 
       const eventoMar = this.motorNarrativo.gerarEventoMaritimo(tipoTile, novoX, novoY);
       this.exibirEvento(eventoMar, `${regiao} — Mar Aberto`);
@@ -881,9 +902,15 @@ class ControladorMundo {
         const resultado = opcao.acao();
         this.registrarLog(resultado);
         this.verificarSubidaNivel();
+
         if (estadoJogo.faseAtual !== 'combate') {
-          textoEl.textContent = resultado;
           this.atualizarHud();
+          // Se era uma atividade única de XP, recarrega o evento do local para remover o botão imediatamente
+          if (opcao.unica && estadoJogo.faseAtual === 'ilha') {
+            const tileAtual = estadoJogo.mapaAtual.matriz[estadoJogo.posicaoJogador.y][estadoJogo.posicaoJogador.x];
+            this.exibirEvento(this.motorNarrativo.gerarEventoLocal(tileAtual), tituloPadrao);
+          }
+          textoEl.textContent = resultado;
         }
       });
       opcoesEl.appendChild(btn);
